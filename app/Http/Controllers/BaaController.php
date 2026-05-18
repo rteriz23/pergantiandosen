@@ -97,8 +97,8 @@ class BaaController extends Controller
         $filename = 'honor_presensi_dosen_' . ($periode ?? 'semua') . '_' . now()->format('Ymd') . '.csv';
         $handle   = fopen('php://output', 'w');
         ob_start();
-        fputcsv($handle, $csvHeader);
-        foreach ($rows as $row) fputcsv($handle, $row);
+        fputcsv($handle, $csvHeader, ';');
+        foreach ($rows as $row) fputcsv($handle, $row, ';');
         fclose($handle);
         $csv = ob_get_clean();
 

@@ -8,4 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class KalenderAkademik extends Model
 {
     use HasFactory;
+    
+    protected $fillable = [
+        'judul',
+        'tanggal_mulai',
+        'tanggal_selesai',
+        'keterangan',
+        'warna'
+    ];
 }

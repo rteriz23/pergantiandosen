@@ -17,7 +17,7 @@ class MahasiswaController extends Controller
 
         if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
+                $q->where('nama', 'like', "%{$search}%")
                   ->orWhere('nim', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
@@ -99,7 +99,7 @@ class MahasiswaController extends Controller
             Mahasiswa::updateOrCreate(
                 ['nim' => $nim],
                 [
-                    'name' => $name,
+                    'nama' => $name,
                     'email' => $email,
                     'prodi_id' => $prodi->id,
                     'kelas' => $kelas
@@ -121,7 +121,7 @@ class MahasiswaController extends Controller
 
         if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
+                $q->where('nama', 'like', "%{$search}%")
                   ->orWhere('nim', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
@@ -145,11 +145,11 @@ class MahasiswaController extends Controller
             $file = fopen('php://output', 'w');
             
             // Header
-            fputcsv($file, ['name', 'nim', 'email', 'prodi_name', 'kelas'], ';');
+            fputcsv($file, ['nama', 'nim', 'email', 'prodi_name', 'kelas'], ';');
             
             // Rows
             foreach ($mahasiswas as $m) {
-                fputcsv($file, [$m->name, $m->nim, $m->email, optional($m->prodi)->name ?? '', $m->kelas ?? ''], ';');
+                fputcsv($file, [$m->nama, $m->nim, $m->email, optional($m->prodi)->name ?? '', $m->kelas ?? ''], ';');
             }
             
             fclose($file);

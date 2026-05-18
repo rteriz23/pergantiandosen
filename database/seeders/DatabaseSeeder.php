@@ -78,6 +78,7 @@ class DatabaseSeeder extends Seeder
 
         // Call the schedule seeder which runs the python PDF parser
         $this->call([
+            AdminSeeder::class,
             ScheduleSeeder::class,
         ]);
     }

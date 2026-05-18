@@ -4,14 +4,15 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 Kelola Periode & Tahun Ajaran
             </h2>
-            <button @click="showModal = true; isEdit = false; name = ''; actionUrl = '{{ route('baa.periodes.store') }}'" 
+            <button x-data="{}" @click="$dispatch('open-periode-modal', { isEdit: false, name: '', actionUrl: '{{ route('baa.periodes.store') }}' })" 
                 class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-xl transition duration-150 shadow-sm">
                 + Tambah Periode Baru
             </button>
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="{ showModal: false, actionUrl: '', name: '', is_active: true, isEdit: false }">
+    <div class="py-12" x-data="{ showModal: false, actionUrl: '', name: '', is_active: true, isEdit: false }"
+        @open-periode-modal.window="showModal = true; isEdit = $event.detail.isEdit; name = $event.detail.name; actionUrl = $event.detail.actionUrl; is_active = true">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
             @if(session('success'))

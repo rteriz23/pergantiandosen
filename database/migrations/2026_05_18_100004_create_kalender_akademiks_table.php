@@ -9,13 +9,12 @@ class CreateKalenderAkademiksTable extends Migration
     {
         Schema::create('kalender_akademiks', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tahun_akademik_id')->nullable();
-            $table->date('tanggal');
-            $table->string('keterangan');
-            $table->boolean('is_libur')->default(true);   // libur = tidak bisa dijadwalkan
-            $table->enum('jenis', ['libur_nasional', 'libur_kampus', 'ujian', 'kegiatan', 'lainnya'])->default('lainnya');
+            $table->string('judul');
+            $table->date('tanggal_mulai');
+            $table->date('tanggal_selesai')->nullable();
+            $table->text('keterangan')->nullable();
+            $table->string('warna')->default('#4F46E5');
             $table->timestamps();
-            $table->foreign('tahun_akademik_id')->references('id')->on('tahun_akademiks')->onDelete('set null');
         });
     }
 

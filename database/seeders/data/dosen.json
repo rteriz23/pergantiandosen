@@ -1,0 +1,797 @@
+[
+    {
+        "name": "TINI MARTINI",
+        "email": "dosen_0419057402@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "Dr BERTHA MUSTY, M.M",
+        "email": "dosen_188002@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "Adil Musty Tamzil, S.E., M.M.",
+        "email": "dosen_223007@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "REMA KARYANTI SOENENDAR",
+        "email": "dosen_202012@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "Rini Ratnaningsih, S.Sos., M.M.",
+        "email": "dosen_0416036801@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "Ade Oki Pebiansyah, S.T., M.M",
+        "email": "dosen_125007@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "Dr ANNI YULIAH, S.Sos., M.Si.",
+        "email": "dosen_209007@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "Ervie Nur Afifa Mukhlis, S.E., M.A.B.",
+        "email": "dosen_123002@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "Adang Kurniawan, M.Kom.",
+        "email": "dosen_125010@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "JENNIFER YUNANI",
+        "email": "dosen_0412026102@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "TUTI SULASTRI, S.Pd., M.M.",
+        "email": "dosen_0417086302@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "SYAEPUDIN",
+        "email": "dosen_2200003@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "Tengku Ine Hendriana, S.Pd., M.M.",
+        "email": "dosen_118001@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "ANUM DAHLIA, S.S., M.Hum.",
+        "email": "dosen_205004@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "DEDE ISMAIL, S.S., M.Hum.",
+        "email": "dosen_202019@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "Deden Sofyan Hamdani, M.T.",
+        "email": "dosen_102007@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "ANDRE SETIAWAN INDRA",
+        "email": "dosen_205019@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "WAHYU NURJAYA WK, S.T., M.Kom.",
+        "email": "dosen_114002@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "Cindy Sri Meidina Adeliani, S.Pd., S.S., M.Pd.",
+        "email": "dosen_126003@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "TJANG KIAN LIONG, Drs., M.M.",
+        "email": "dosen_0427086001@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 5,
+            "name": "S1 - Administrasi Bisnis",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Administrasi Bisnis"
+    },
+    {
+        "name": "Kiki Kusumayadi, M.Ak.",
+        "email": "dosen_226004@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "JANADI RAMMELSBERGI THAMRIN, S.PT., M.M.",
+        "email": "dosen_213014@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "Drs. Muhtarudin, M.M.",
+        "email": "dosen_1910063@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "WENNY DJUARNI",
+        "email": "dosen_0408116801@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "IMAS ANGGRAENI, S.T., M.M",
+        "email": "dosen_204004@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "Dr MUSTAKIM RIJA, S.S., M.Hum",
+        "email": "dosen_298004@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "HAMIDAH, S.E., M.Ak.",
+        "email": "dosen_123003@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "Hendi Kurnia Permana, S.E., M.Ak.",
+        "email": "dosen_224004@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "AHMAD NUKMAN GINANJAR",
+        "email": "dosen_219007@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "Syahrul Septian Zein, S.Mat., M.Pd.",
+        "email": "dosen_226001@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "SANTA YUSUF NASUTION, M.Sc",
+        "email": "dosen_225005@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "Dr Junaedi Abdillah, S.T., M.Ak.",
+        "email": "dosen_206004@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "Ihda Farhatun Nisak, S.Pd., M.M.",
+        "email": "dosen_225004@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "ELIZA VIANDRAYANI AZIZ, S.T., M.M",
+        "email": "dosen_202026@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "SITTI NURRACHMAH",
+        "email": "dosen_0416046803@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "ETI SUPRIHATIN, S.E., M.Ak.",
+        "email": "dosen_299005@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "Memet Sanjaya, S.Kom., M.A.",
+        "email": "dosen_126004@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 3,
+            "name": "S1 - Akuntansi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Akuntansi"
+    },
+    {
+        "name": "Dayanni Vera Versanika, S.T., M.Kom.",
+        "email": "dosen_126002@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 8,
+            "name": "Umum",
+            "created_at": "2026-05-16T14:32:47.000000Z",
+            "updated_at": "2026-05-16T14:32:47.000000Z"
+        },
+        "prodi_name": "Umum"
+    },
+    {
+        "name": "JOHANNES TRIANGKA SETIADJI",
+        "email": "dosen_9904016685@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "Gelar Aditya Pratama, S.T., M.Kom.",
+        "email": "dosen_226002@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "Dr. Neng Susi Susilawati Sugiana, S.Kom., M.M.",
+        "email": "dosen_120005@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "SIHAR N.M.P. SIMAMORA, M.T.",
+        "email": "dosen_122003@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "ANDY VICTOR PAKPAHAN, M.T.",
+        "email": "dosen_106002@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "Adi Suwarno, S.Kom., M.Kom.",
+        "email": "dosen_225001@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "HASAN BALUBITA, M.Kom",
+        "email": "dosen_201012@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 8,
+            "name": "Umum",
+            "created_at": "2026-05-16T14:32:47.000000Z",
+            "updated_at": "2026-05-16T14:32:47.000000Z"
+        },
+        "prodi_name": "Umum"
+    },
+    {
+        "name": "Sonty Lena, S.Kom., M.M., M.Kom.",
+        "email": "dosen_225008@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "Renol Burjulius, S.T., S.H., M.H., M.Kom.",
+        "email": "dosen_225006@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "INDRA PURNAMA, S.Sos., M.T.",
+        "email": "dosen_297007@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "OFFY SHOLEHATUN",
+        "email": "dosen_214002@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "Muhammad Eko Utomo, S.T., M.M.",
+        "email": "dosen_224008@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "DONI, M.T.",
+        "email": "dosen_220009@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 1,
+            "name": "S1 - Teknik Informatika",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Teknik Informatika"
+    },
+    {
+        "name": "FELIX FERDIAN, M. Kom.",
+        "email": "dosen_216009@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 2,
+            "name": "S1 - Sistem Informasi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Sistem Informasi"
+    },
+    {
+        "name": "SRI KURNIASIH",
+        "email": "dosen_0411097601@lpkia.ac.id",
+        "email_verified_at": null,
+        "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC\/.og\/at2.uheWG\/igi",
+        "role": "dosen",
+        "phone_number": null,
+        "prodi": {
+            "id": 2,
+            "name": "S1 - Sistem Informasi",
+            "created_at": "2026-05-16T14:32:46.000000Z",
+            "updated_at": "2026-05-16T14:32:46.000000Z"
+        },
+        "prodi_name": "S1 - Sistem Informasi"
+    }
+]

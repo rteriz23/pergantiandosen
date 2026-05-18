@@ -301,4 +301,69 @@ class ScheduleController extends Controller
 
         return redirect()->route('admin.schedule.index')->with('success', "$importedCount data jadwal berhasil diimport. ($skippedCount dilewati karena Dosen / MK tidak ditemukan)");
     }
+
+    public function export(Request $request)
+    {
+        $search = $request->get('search');
+        $roomId = $request->get('room_id');
+        $dosenId = $request->get('dosen_id');
+
+        $query = Schedule::with(['dosen', 'room']);
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('mata_kuliah', 'like', "%{$search}%")
+                  ->orWhere('kelas', 'like', "%{$search}%");
+            });
+        }
+
+        if ($roomId) {
+            $query->where('room_id', $roomId);
+        }
+
+        if ($dosenId) {
+            $query->where('user_id', $dosenId);
+        }
+
+        $schedules = $query->orderBy('waktu_mulai', 'desc')->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="master_jadwal_' . date('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($schedules) {
+            $file = fopen('php://output', 'w');
+            
+            // Header
+            fputcsv($file, ['dosen_email', 'dosen_name', 'mata_kuliah', 'kelas', 'room_name', 'tanggal', 'waktu_mulai', 'waktu_selesai', 'periode', 'pertemuan'], ';');
+            
+            // Rows
+            foreach ($schedules as $s) {
+                $tanggal = Carbon::parse($s->waktu_mulai)->format('Y-m-d');
+                $start = Carbon::parse($s->waktu_mulai)->format('H:i');
+                $end = Carbon::parse($s->waktu_selesai)->format('H:i');
+
+                fputcsv($file, [
+                    optional($s->dosen)->email ?? '',
+                    optional($s->dosen)->name ?? '',
+                    $s->mata_kuliah,
+                    $s->kelas,
+                    optional($s->room)->name ?? '',
+                    $tanggal,
+                    $start,
+                    $end,
+                    $s->periode ?? '',
+                    $s->pertemuan ?? 1
+                ], ';');
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

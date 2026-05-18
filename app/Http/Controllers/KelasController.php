@@ -88,4 +88,41 @@ class KelasController extends Controller
 
         return redirect()->route('admin.kelas.index')->with('success', "$importedCount data kelas berhasil diimport.");
     }
+
+    public function export(Request $request)
+    {
+        $search = $request->get('search');
+
+        $query = Kelas::query();
+
+        if ($search) {
+            $query->where('nama_kelas', 'like', "%{$search}%");
+        }
+
+        $kelas = $query->orderBy('nama_kelas')->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="master_kelas_' . date('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($kelas) {
+            $file = fopen('php://output', 'w');
+            
+            // Header
+            fputcsv($file, ['nama_kelas'], ';');
+            
+            // Rows
+            foreach ($kelas as $k) {
+                fputcsv($file, [$k->nama_kelas], ';');
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

@@ -111,4 +111,49 @@ class MataKuliahController extends Controller
 
         return redirect()->route('admin.matakuliah.index')->with('success', "$importedCount data mata kuliah berhasil diimport.");
     }
+
+    public function export(Request $request)
+    {
+        $search = $request->get('search');
+        $prodiId = $request->get('prodi_id');
+
+        $query = MataKuliah::query();
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('kode', 'like', "%{$search}%");
+            });
+        }
+
+        if ($prodiId) {
+            $query->where('prodi_id', $prodiId);
+        }
+
+        $matakuliahs = $query->with('prodi')->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="master_matakuliah_' . date('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($matakuliahs) {
+            $file = fopen('php://output', 'w');
+            
+            // Header
+            fputcsv($file, ['kode', 'nama', 'sks', 'jenis', 'prodi_name'], ';');
+            
+            // Rows
+            foreach ($matakuliahs as $mk) {
+                fputcsv($file, [$mk->kode, $mk->nama, $mk->sks, $mk->jenis ?? 'Teori', optional($mk->prodi)->name ?? ''], ';');
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

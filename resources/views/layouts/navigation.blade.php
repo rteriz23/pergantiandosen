@@ -37,6 +37,9 @@
                         <x-nav-link :href="route('baa.periodes.index')" :active="request()->routeIs('baa.periodes.*')">
                             Periode
                         </x-nav-link>
+                        <x-nav-link :href="route('admin.prodi.index')" :active="request()->routeIs('admin.prodi.*')">
+                            Prodi
+                        </x-nav-link>
                         <x-nav-link :href="route('kemahasiswaan.settings')" :active="request()->routeIs('kemahasiswaan.*')">
                             Kemahasiswaan
                         </x-nav-link>
@@ -133,8 +136,17 @@
             </x-responsive-nav-link>
 
             @if(Auth::user()->role == 'baa')
+                <x-responsive-nav-link :href="route('baa.requests')" :active="request()->routeIs('baa.requests')">
+                    {{ __('Pergantian') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.schedule.index')" :active="request()->routeIs('admin.schedule.*')">
+                    {{ __('Jadwal') }}
+                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('baa.periodes.index')" :active="request()->routeIs('baa.periodes.*')">
                     {{ __('Kelola Periode') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.prodi.index')" :active="request()->routeIs('admin.prodi.*')">
+                    {{ __('Program Studi') }}
                 </x-responsive-nav-link>
             @endif
         </div>

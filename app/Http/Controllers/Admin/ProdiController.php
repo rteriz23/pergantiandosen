@@ -1,58 +1,68 @@
 <?php
 
-namespace App\Http\Controllers\Baa;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Periode;
 use Illuminate\Http\Request;
+use App\Models\Prodi;
 
-class PeriodeController extends Controller
+class ProdiController extends Controller
 {
     public function index(Request $request)
     {
         $search = $request->get('search');
-        $query = Periode::query();
+
+        $query = Prodi::query();
 
         if ($search) {
             $query->where('name', 'like', "%{$search}%");
         }
 
-        $periodes = $query->orderBy('name', 'desc')->get();
-        return view('baa.periodes.index', compact('periodes', 'search'));
+        $prodis = $query->paginate(10)->withQueryString();
+
+        return view('admin.prodi.index', compact('prodis', 'search'));
+    }
+
+    public function create()
+    {
+        return view('admin.prodi.create');
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|unique:periodes,name',
+            'name' => 'required|string|unique:prodis,name|max:255',
         ]);
 
-        Periode::create([
-            'name' => $request->name,
-            'is_active' => true,
-        ]);
+        Prodi::create($request->all());
 
-        return back()->with('success', 'Periode berhasil ditambahkan.');
+        return redirect()->route('admin.prodi.index')->with('success', 'Program Studi berhasil dibuat.');
     }
 
-    public function update(Request $request, Periode $periode)
+    public function edit($id)
+    {
+        $prodi = Prodi::findOrFail($id);
+        return view('admin.prodi.edit', compact('prodi'));
+    }
+
+    public function update(Request $request, $id)
     {
         $request->validate([
-            'name' => 'required|string|unique:periodes,name,' . $periode->id,
+            'name' => 'required|string|max:255|unique:prodis,name,' . $id,
         ]);
 
-        $periode->update([
-            'name' => $request->name,
-            'is_active' => $request->has('is_active'),
-        ]);
+        $prodi = Prodi::findOrFail($id);
+        $prodi->update($request->all());
 
-        return back()->with('success', 'Periode berhasil diperbarui.');
+        return redirect()->route('admin.prodi.index')->with('success', 'Program Studi berhasil diperbarui.');
     }
 
-    public function destroy(Periode $periode)
+    public function destroy($id)
     {
-        $periode->delete();
-        return back()->with('success', 'Periode berhasil dihapus.');
+        $prodi = Prodi::findOrFail($id);
+        $prodi->delete();
+
+        return redirect()->route('admin.prodi.index')->with('success', 'Program Studi berhasil dihapus.');
     }
 
     public function import(Request $request)
@@ -66,7 +76,7 @@ class PeriodeController extends Controller
         
         // Skip header
         $header = fgetcsv($handle, 1000, ';');
-        // fallback to comma
+        // fallback to comma if only 1 column parsed and contains comma
         if (count($header) == 1 && strpos($header[0], ',') !== false) {
             rewind($handle);
             $header = fgetcsv($handle, 1000, ',');
@@ -81,45 +91,44 @@ class PeriodeController extends Controller
             
             $name = $row[0];
 
-            Periode::updateOrCreate(
-                ['name' => $name],
-                ['is_active' => true]
+            Prodi::updateOrCreate(
+                ['name' => $name]
             );
             $importedCount++;
         }
         fclose($handle);
 
-        return back()->with('success', "$importedCount data periode berhasil diimport.");
+        return redirect()->route('admin.prodi.index')->with('success', "$importedCount data program studi berhasil diimport.");
     }
 
     public function export(Request $request)
     {
         $search = $request->get('search');
 
-        $query = Periode::query();
+        $query = Prodi::query();
 
         if ($search) {
             $query->where('name', 'like', "%{$search}%");
         }
 
-        $periodes = $query->orderBy('name', 'desc')->get();
+        $prodis = $query->orderBy('name')->get();
 
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="master_periode_' . date('Ymd_His') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="master_program_studi_' . date('Ymd_His') . '.csv"',
             'Pragma' => 'no-cache',
             'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
             'Expires' => '0'
         ];
 
-        $callback = function() use ($periodes) {
+        $callback = function() use ($prodis) {
             $file = fopen('php://output', 'w');
             
             // Header
             fputcsv($file, ['name'], ';');
             
             // Rows
-            foreach ($periodes as $p) {
+            foreach ($prodis as $p) {
                 fputcsv($file, [$p->name], ';');
             }
             

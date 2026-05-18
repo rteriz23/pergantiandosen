@@ -57,6 +57,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Periode management (BAA)
     Route::get('/baa/periodes', [\App\Http\Controllers\Baa\PeriodeController::class, 'index'])->name('baa.periodes.index');
+    Route::get('/baa/periodes/export', [\App\Http\Controllers\Baa\PeriodeController::class, 'export'])->name('baa.periodes.export');
     Route::post('/baa/periodes', [\App\Http\Controllers\Baa\PeriodeController::class, 'store'])->name('baa.periodes.store');
     Route::post('/baa/periodes/import', [\App\Http\Controllers\Baa\PeriodeController::class, 'import'])->name('baa.periodes.import');
     Route::put('/baa/periodes/{periode}', [\App\Http\Controllers\Baa\PeriodeController::class, 'update'])->name('baa.periodes.update');
@@ -69,13 +70,29 @@ Route::middleware(['auth'])->group(function () {
     
     // ── Admin Master Data Routes ────────────────────────────────────────────
     Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('dosen/export', [\App\Http\Controllers\Admin\DosenController::class, 'export'])->name('dosen.export');
         Route::post('dosen/import', [\App\Http\Controllers\Admin\DosenController::class, 'import'])->name('dosen.import');
+
+        Route::get('mahasiswa/export', [\App\Http\Controllers\Admin\MahasiswaController::class, 'export'])->name('mahasiswa.export');
         Route::post('mahasiswa/import', [\App\Http\Controllers\Admin\MahasiswaController::class, 'import'])->name('mahasiswa.import');
+
+        Route::get('matakuliah/export', [\App\Http\Controllers\MataKuliahController::class, 'export'])->name('matakuliah.export');
         Route::post('matakuliah/import', [\App\Http\Controllers\MataKuliahController::class, 'import'])->name('matakuliah.import');
+
+        Route::get('kelas/export', [\App\Http\Controllers\KelasController::class, 'export'])->name('kelas.export');
         Route::post('kelas/import', [\App\Http\Controllers\KelasController::class, 'import'])->name('kelas.import');
+
+        Route::get('room/export', [\App\Http\Controllers\Admin\RoomController::class, 'export'])->name('room.export');
         Route::post('room/import', [\App\Http\Controllers\Admin\RoomController::class, 'import'])->name('room.import');
+
+        Route::get('kalender/export', [\App\Http\Controllers\KalenderAkademikController::class, 'export'])->name('kalender.export');
         Route::post('kalender/import', [\App\Http\Controllers\KalenderAkademikController::class, 'import'])->name('kalender.import');
+
+        Route::get('schedule/export', [\App\Http\Controllers\Admin\ScheduleController::class, 'export'])->name('schedule.export');
         Route::post('schedule/import', [\App\Http\Controllers\Admin\ScheduleController::class, 'import'])->name('schedule.import');
+
+        Route::get('prodi/export', [\App\Http\Controllers\Admin\ProdiController::class, 'export'])->name('prodi.export');
+        Route::post('prodi/import', [\App\Http\Controllers\Admin\ProdiController::class, 'import'])->name('prodi.import');
 
         Route::resource('dosen', \App\Http\Controllers\Admin\DosenController::class);
         Route::resource('mahasiswa', \App\Http\Controllers\Admin\MahasiswaController::class);
@@ -84,6 +101,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('room', \App\Http\Controllers\Admin\RoomController::class);
         Route::resource('kalender', \App\Http\Controllers\KalenderAkademikController::class);
         Route::resource('schedule', \App\Http\Controllers\Admin\ScheduleController::class);
+        Route::resource('prodi', \App\Http\Controllers\Admin\ProdiController::class);
     });
 });
 

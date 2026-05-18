@@ -34,6 +34,7 @@
                     </div>
                     <nav class="p-4 space-y-2">
                         <a href="{{ route('admin.dosen.index') }}" class="block px-4 py-2.5 rounded-lg {{ request()->routeIs('admin.dosen.*') ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition' }}">Dosen</a>
+                        <a href="{{ route('admin.prodi.index') }}" class="block px-4 py-2.5 rounded-lg {{ request()->routeIs('admin.prodi.*') ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition' }}">Program Studi</a>
                         <a href="{{ route('admin.mahasiswa.index') }}" class="block px-4 py-2.5 rounded-lg {{ request()->routeIs('admin.mahasiswa.*') ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition' }}">Mahasiswa</a>
                         <a href="{{ route('admin.matakuliah.index') }}" class="block px-4 py-2.5 rounded-lg {{ request()->routeIs('admin.matakuliah.*') ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition' }}">Mata Kuliah</a>
                         <a href="{{ route('admin.kelas.index') }}" class="block px-4 py-2.5 rounded-lg {{ request()->routeIs('admin.kelas.*') ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition' }}">Kelas</a>

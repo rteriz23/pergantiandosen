@@ -117,4 +117,50 @@ class DosenController extends Controller
 
         return redirect()->route('admin.dosen.index')->with('success', "$importedCount data dosen berhasil diimport.");
     }
+
+    public function export(Request $request)
+    {
+        $search = $request->get('search');
+        $prodiId = $request->get('prodi_id');
+
+        $query = User::where('role', 'dosen');
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('nidn', 'like', "%{$search}%");
+            });
+        }
+
+        if ($prodiId) {
+            $query->where('prodi_id', $prodiId);
+        }
+
+        $dosens = $query->with('prodi')->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="master_dosen_' . date('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($dosens) {
+            $file = fopen('php://output', 'w');
+            
+            // Header
+            fputcsv($file, ['name', 'email', 'nidn', 'prodi_name'], ';');
+            
+            // Rows
+            foreach ($dosens as $d) {
+                fputcsv($file, [$d->name, $d->email, $d->nidn, optional($d->prodi)->name ?? ''], ';');
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

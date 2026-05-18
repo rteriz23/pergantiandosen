@@ -111,4 +111,50 @@ class MahasiswaController extends Controller
 
         return redirect()->route('admin.mahasiswa.index')->with('success', "$importedCount data mahasiswa berhasil diimport.");
     }
+
+    public function export(Request $request)
+    {
+        $search = $request->get('search');
+        $prodiId = $request->get('prodi_id');
+
+        $query = Mahasiswa::query();
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nim', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($prodiId) {
+            $query->where('prodi_id', $prodiId);
+        }
+
+        $mahasiswas = $query->with('prodi')->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="master_mahasiswa_' . date('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($mahasiswas) {
+            $file = fopen('php://output', 'w');
+            
+            // Header
+            fputcsv($file, ['name', 'nim', 'email', 'prodi_name', 'kelas'], ';');
+            
+            // Rows
+            foreach ($mahasiswas as $m) {
+                fputcsv($file, [$m->name, $m->nim, $m->email, optional($m->prodi)->name ?? '', $m->kelas ?? ''], ';');
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

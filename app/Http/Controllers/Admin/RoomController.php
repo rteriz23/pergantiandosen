@@ -105,4 +105,49 @@ class RoomController extends Controller
 
         return redirect()->route('admin.room.index')->with('success', "$importedCount data ruangan berhasil diimport.");
     }
+
+    public function export(Request $request)
+    {
+        $search = $request->get('search');
+        $type = $request->get('type');
+
+        $query = Room::query();
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('keterangan', 'like', "%{$search}%");
+            });
+        }
+
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        $rooms = $query->orderBy('name')->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="master_ruangan_' . date('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($rooms) {
+            $file = fopen('php://output', 'w');
+            
+            // Header
+            fputcsv($file, ['name', 'type', 'capacity', 'keterangan'], ';');
+            
+            // Rows
+            foreach ($rooms as $r) {
+                fputcsv($file, [$r->name, $r->type, $r->capacity, $r->keterangan ?? ''], ';');
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

@@ -99,4 +99,44 @@ class KalenderAkademikController extends Controller
 
         return redirect()->route('admin.kalender.index')->with('success', "$importedCount agenda kalender akademik berhasil diimport.");
     }
+
+    public function export(Request $request)
+    {
+        $search = $request->get('search');
+
+        $query = KalenderAkademik::query();
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('judul', 'like', "%{$search}%")
+                  ->orWhere('keterangan', 'like', "%{$search}%");
+            });
+        }
+
+        $kalenders = $query->orderBy('tanggal_mulai', 'desc')->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="master_kalender_' . date('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($kalenders) {
+            $file = fopen('php://output', 'w');
+            
+            // Header
+            fputcsv($file, ['judul', 'tanggal_mulai', 'tanggal_selesai', 'keterangan', 'warna'], ';');
+            
+            // Rows
+            foreach ($kalenders as $k) {
+                fputcsv($file, [$k->judul, $k->tanggal_mulai, $k->tanggal_selesai, $k->keterangan ?? '', $k->warna ?? '#4F46E5'], ';');
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

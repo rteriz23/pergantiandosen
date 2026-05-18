@@ -173,6 +173,22 @@ class BaaController extends Controller
         return back()->with('success', 'Mode KBM berhasil diubah menjadi ' . ($req->is_online ? 'Online' : 'Offline') . '.');
     }
 
+    public function assignRoom(Request $request, $id)
+    {
+        $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+        ]);
+
+        $req = ScheduleRequest::findOrFail($id);
+        $room = Room::findOrFail($request->room_id);
+        
+        $req->room_id = $room->id;
+        $req->ruangan_usulan = $room->kode_ruangan ?? $room->name;
+        $req->save();
+
+        return back()->with('success', 'Ruangan berhasil di-assign untuk jadwal tersebut.');
+    }
+
     public function rooms()
     {
         $rooms = Room::orderBy('name')->get();

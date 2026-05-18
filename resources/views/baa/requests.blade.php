@@ -88,8 +88,24 @@
                             <td class="px-5 py-4 text-xs">
                                 <div class="text-blue-600">{{ \Carbon\Carbon::parse($req->schedule->waktu_mulai)->format('d M H:i') }} – {{ \Carbon\Carbon::parse($req->schedule->waktu_selesai)->format('H:i') }}</div>
                                 <div class="text-purple-600 font-bold mt-1">→ {{ \Carbon\Carbon::parse($req->waktu_mulai_usulan)->format('d M H:i') }} – {{ \Carbon\Carbon::parse($req->waktu_selesai_usulan)->format('H:i') }}</div>
+                                @if($req->alasan)
+                                <div class="mt-2 text-[10px] text-gray-500 italic max-w-xs truncate">
+                                    Alasan: {!! str_replace(['[PENGULANG]', '[BENTROK]'], ['<span class="bg-red-100 text-red-700 font-bold px-1 rounded">[PENGULANG]</span>', '<span class="bg-orange-100 text-orange-700 font-bold px-1 rounded">[BENTROK]</span>'], e($req->alasan)) !!}
+                                </div>
+                                @endif
                             </td>
-                            <td class="px-5 py-4 text-xs font-semibold text-gray-700">{{ $req->ruangan_usulan ?? '-' }}</td>
+                            <td class="px-5 py-4 text-xs">
+                                <div class="font-semibold text-gray-700 mb-1">Usulan: {{ $req->ruangan_usulan ?? '-' }}</div>
+                                @if($req->status === 'Disetujui' && !$req->is_online)
+                                    @if($req->room_id)
+                                        <span class="text-green-600 font-bold bg-green-50 px-2 py-1 rounded">Ter-Assign: {{ $req->room->kode_ruangan ?? $req->room->name }}</span>
+                                    @else
+                                        <button @click="openAssignRoom({{ $req->id }}, '{{ addslashes($req->ruangan_usulan) }}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1.5 rounded-lg font-bold transition-colors">
+                                            Set Ruangan
+                                        </button>
+                                    @endif
+                                @endif
+                            </td>
                             <td class="px-5 py-4 text-center">
                                 <span class="px-2 py-1 rounded-full text-xs font-bold {{ $req->is_online ? 'bg-cyan-100 text-cyan-800' : 'bg-gray-100 text-gray-600' }}">
                                     {{ $req->is_online ? 'Online' : 'Offline' }}
@@ -173,6 +189,30 @@
             </form>
         </div>
     </div>
+
+    {{-- Assign Room Modal --}}
+    <div x-show="showAssignRoom" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style="display:none">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <h3 class="text-lg font-black text-gray-900 mb-1">Tetapkan Ruangan</h3>
+            <p class="text-sm text-gray-500 mb-5" x-text="'Usulan Dosen: ' + assignRoomUsulan"></p>
+            <form method="POST" :action="`/baa/requests/${assignRoomReqId}/assign-room`" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Pilih Ruangan Master Data</label>
+                    <select name="room_id" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Pilih Ruangan --</option>
+                        @foreach($rooms as $r)
+                        <option value="{{ $r->id }}">{{ $r->name }} ({{ $r->type }}, kap. {{ $r->capacity ?? '-' }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">Tetapkan</button>
+                    <button type="button" @click="showAssignRoom=false" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -180,12 +220,21 @@ function baaDashboard() {
     return {
         showPresensi: false,
         presensiReqId: null, presensiDosenId: null, presensiDosen: '',
+        
+        showAssignRoom: false,
+        assignRoomReqId: null, assignRoomUsulan: '',
 
         openPresensi(reqId, dosenId, dosenName) {
             this.presensiReqId  = reqId;
             this.presensiDosenId = dosenId;
             this.presensiDosen  = dosenName;
             this.showPresensi   = true;
+        },
+        
+        openAssignRoom(reqId, usulan) {
+            this.assignRoomReqId = reqId;
+            this.assignRoomUsulan = usulan;
+            this.showAssignRoom = true;
         }
     };
 }

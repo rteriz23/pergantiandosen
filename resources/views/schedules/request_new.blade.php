@@ -144,10 +144,11 @@
                     </div>
 
                     <div>
-                        <label class="flex items-center gap-2 mb-1.5">
-                            <input type="checkbox" name="is_online" value="1" class="rounded">
-                            <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">KBM Online</span>
-                        </label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Mode Pengajaran *</label>
+                        <select name="is_online" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                            <option value="0">Tatap Muka (Offline)</option>
+                            <option value="1">Online</option>
+                        </select>
                     </div>
 
                     <div>

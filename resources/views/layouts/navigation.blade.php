@@ -28,6 +28,9 @@
                         <x-nav-link :href="route('baa.requests')" :active="request()->routeIs('baa.requests')">
                             Pergantian
                         </x-nav-link>
+                        <x-nav-link :href="route('admin.schedule.index')" :active="request()->routeIs('admin.schedule.*')">
+                            Jadwal
+                        </x-nav-link>
                         <x-nav-link :href="route('baa.settings')" :active="request()->routeIs('baa.settings')">
                             Pengaturan
                         </x-nav-link>

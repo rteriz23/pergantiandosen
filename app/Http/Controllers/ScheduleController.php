@@ -217,20 +217,51 @@ class ScheduleController extends Controller
             $rules['pengaju_email']     = 'nullable|email|max:255';
         }
 
-        if ($request->pengaju_type === 'mahasiswa') {
-            // Check student submission limit
-            $prodiId  = $schedule->prodi_id;
-            $setting  = KemahasiswaanSetting::getFor($prodiId);
-            $nimNidn  = $request->pengaju_nim_nidn ?? ($request->pengaju_nim_nidn);
-            $used     = ScheduleRequest::where('pengaju_nim_nidn', $nimNidn)
-                ->where('pengaju_type', 'mahasiswa')
-                ->whereHas('schedule', function($q) use ($prodiId) { $q->where('prodi_id', $prodiId); })
-                ->count();
+        $isPengulang = false;
+        $isBentrokMahasiswa = false;
 
-            if ($used >= $setting->max_pergantian) {
+        if ($request->pengaju_type === 'mahasiswa') {
+            $nimNidn  = $request->pengaju_nim_nidn ?? ($request->pengaju_nim_nidn);
+            
+            // Check student SKS limit (< 6 SKS)
+            $existingRequests = ScheduleRequest::where('pengaju_nim_nidn', $nimNidn)
+                ->where('pengaju_type', 'mahasiswa')
+                ->whereIn('status', ['Pending', 'Disetujui'])
+                ->with('schedule')
+                ->get();
+            
+            $totalSks = 0;
+            foreach ($existingRequests as $req) {
+                $sks = 3; // default
+                if (preg_match('/\((\d+)\s*SKS\)/i', $req->schedule->mata_kuliah, $matches)) {
+                    $sks = (int)$matches[1];
+                }
+                $totalSks += $sks;
+            }
+            
+            // Current request SKS
+            $currentSks = 3;
+            if (preg_match('/\((\d+)\s*SKS\)/i', $schedule->mata_kuliah, $matches)) {
+                $currentSks = (int)$matches[1];
+            }
+            
+            if (($totalSks + $currentSks) > 6) {
                 return back()->withErrors([
-                    'pengaju_nim_nidn' => "Batas pengajuan pergantian untuk mahasiswa ini sudah tercapai ({$setting->max_pergantian}x).",
+                    'pengaju_nim_nidn' => "Total SKS pergantian jadwal tidak boleh lebih dari 6 SKS. SKS diajukan: {$totalSks} SKS, Usulan ini: {$currentSks} SKS.",
                 ]);
+            }
+
+            // Check if Pengulang (assume based on class containing 'PENGULANG' or 'R')
+            if (stripos($schedule->kelas, 'pengulang') !== false || stripos($schedule->mata_kuliah, 'pengulang') !== false) {
+                $isPengulang = true;
+            }
+
+            // Check if bentrok with other requests from the same student
+            foreach ($existingRequests as $req) {
+                if ($req->waktu_mulai_usulan < $request->waktu_selesai_usulan && $req->waktu_selesai_usulan > $request->waktu_mulai_usulan) {
+                    $isBentrokMahasiswa = true;
+                    break;
+                }
             }
         }
 
@@ -272,6 +303,15 @@ class ScheduleController extends Controller
             $pengajuId = Auth::id();
         }
 
+        $badgeNotes = [];
+        if (isset($isPengulang) && $isPengulang) $badgeNotes[] = '[PENGULANG]';
+        if (isset($isBentrokMahasiswa) && $isBentrokMahasiswa) $badgeNotes[] = '[BENTROK]';
+
+        $finalAlasan = $request->alasan;
+        if (!empty($badgeNotes)) {
+            $finalAlasan = implode(' ', $badgeNotes) . ' - ' . $finalAlasan;
+        }
+
         $scheduleRequest = ScheduleRequest::create([
             'schedule_id'         => $schedule->id,
             'pengaju_id'          => $pengajuId,
@@ -283,7 +323,7 @@ class ScheduleController extends Controller
             'waktu_selesai_usulan' => $request->waktu_selesai_usulan,
             'ruangan_usulan'      => $request->ruangan_usulan,
             'room_id'             => $roomRecord ? $roomRecord->id : null,
-            'alasan'              => $request->alasan,
+            'alasan'              => $finalAlasan,
             'is_online'           => $request->boolean('is_online'),
             'status'              => 'Pending',
             'sla_deadline'        => $slaDeadline,

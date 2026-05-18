@@ -43,7 +43,9 @@ class ScheduleSeeder extends Seeder
         $scheduleJson = File::get(database_path('seeders/data/schedules.json'));
         $scheduleData = json_decode($scheduleJson, true);
         
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         Schedule::truncate(); // Hapus jadwal lama agar tidak duplikat
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
         
         $count = 0;
         foreach ($scheduleData as $data) {

@@ -19,7 +19,8 @@ class Schedule extends Model
         'waktu_mulai',
         'waktu_selesai',
         'status',
-        'dosen_pengganti_id'
+        'dosen_pengganti_id',
+        'room_id'
     ];
 
     public function dosen()
@@ -35,5 +36,10 @@ class Schedule extends Model
     public function dosenPengganti()
     {
         return $this->belongsTo(User::class, 'dosen_pengganti_id');
+    }
+
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
     }
 }

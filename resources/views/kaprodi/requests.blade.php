@@ -163,7 +163,7 @@
                         </div>
                         @else
                         <div class="text-xs text-gray-400 min-w-[120px] text-right">
-                            {{ $req->approved_at?->format('d M Y H:i') ?? $req->rejected_at?->format('d M Y H:i') ?? '-' }}
+                            {{ optional($req->approved_at)->format('d M Y H:i') ?? optional($req->rejected_at)->format('d M Y H:i') ?? '-' }}
                         </div>
                         @endif
                     </div>

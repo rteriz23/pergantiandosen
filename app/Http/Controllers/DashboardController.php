@@ -12,7 +12,7 @@ class DashboardController extends Controller
         $user = Auth::user();
         if ($user->role === 'kaprodi') {
             return redirect()->route('kaprodi.requests');
-        } elseif ($user->role === 'baa') {
+        } elseif ($user->role === 'baa' || $user->role === 'admin') {
             return redirect()->route('baa.requests');
         }
         

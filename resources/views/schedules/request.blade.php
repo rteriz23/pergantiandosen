@@ -91,10 +91,17 @@
                                 <input type="time" name="waktu_selesai_time" x-model="endTime" required
                                     class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-lg py-3 px-4">
                             </div>
-                            <div>
+                            <div class="col-span-1 md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Usulan Ruangan</label>
-                                <input type="text" name="ruangan_usulan" x-model="proposedRoom" @input.debounce.500ms="checkAvailability" required placeholder="Contoh: Lab 2 / Kelas A"
+                                <input type="text" name="ruangan_usulan" x-model="proposedRoom" @input.debounce.500ms="checkAvailability" required placeholder="Contoh: Lab 2 / Kelas A / Link Zoom"
                                     class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-lg py-3 px-4">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Mode Pengajaran</label>
+                                <select name="is_online" required class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-lg py-3 px-4">
+                                    <option value="0">Tatap Muka (Offline)</option>
+                                    <option value="1">Online</option>
+                                </select>
                             </div>
                         </div>
                         

@@ -16,8 +16,8 @@ class PublicController extends Controller
         $date = $request->get('date', now()->format('Y-m-d'));
         $rooms = Room::all();
         
-        // Cari request yang disetujui (mem-booking ruangan)
-        $approvedRequests = ScheduleRequest::where('status', 'Disetujui')
+        // Cari request yang pending / disetujui (mem-booking ruangan)
+        $approvedRequests = ScheduleRequest::whereIn('status', ['Pending', 'Disetujui'])
             ->whereNotNull('room_id')
             ->whereDate('waktu_mulai_usulan', $date)
             ->with(['schedule.prodi', 'pengaju', 'room'])
@@ -26,7 +26,7 @@ class PublicController extends Controller
         // Cari jadwal reguler yang berlangsung pada tanggal tersebut
         $regularSchedules = Schedule::whereDate('waktu_mulai', $date)
             ->where('status', '!=', 'Diganti')
-            ->with(['dosen'])
+            ->with(['dosen', 'room'])
             ->orderBy('waktu_mulai')
             ->get();
 
@@ -42,87 +42,86 @@ class PublicController extends Controller
     public function cariJadwalKosong(Request $request)
     {
         $date = $request->get('date');
-        $startTime = $request->get('start_time');
-        $endTime = $request->get('end_time');
+        $startTime = $request->get('start_time', '07:00');
+        $endTime = $request->get('end_time', '18:00');
         
-        $availableSlots = [];
+        $roomsStatus = [];
         
         if ($date) {
-            $rooms = Room::all();
-            $approvedRequests = ScheduleRequest::where('status', 'Disetujui')
-                ->whereNotNull('room_id')
-                ->whereDate('waktu_mulai_usulan', $date)
-                ->get();
+            $rooms = Room::where('is_active', true)->orderBy('name')->get();
             
-            if ($startTime && $endTime) {
-                // Check specific time range
-                $slotStart = Carbon::parse($date . ' ' . $startTime);
-                $slotEnd = Carbon::parse($date . ' ' . $endTime);
+            // Selected slot start and end
+            $slotStart = Carbon::parse($date . ' ' . $startTime);
+            $slotEnd = Carbon::parse($date . ' ' . $endTime);
+            
+            // Get all regular schedules on this date
+            $regularSchedules = Schedule::whereDate('waktu_mulai', $date)
+                ->where('status', '!=', 'Diganti')
+                ->with(['dosen'])
+                ->get();
                 
-                foreach ($rooms as $room) {
-                    $isUsed = false;
-                    foreach ($approvedRequests as $req) {
-                        if ($req->room_id == $room->id) {
+            // Get all pending/approved replacement requests on this date
+            $replacementRequests = ScheduleRequest::whereDate('waktu_mulai_usulan', $date)
+                ->whereIn('status', ['Pending', 'Disetujui'])
+                ->with(['schedule.dosen'])
+                ->get();
+                
+            foreach ($rooms as $room) {
+                $isUsed = false;
+                $occupiedBy = null;
+                
+                // 1. Check regular schedules
+                foreach ($regularSchedules as $s) {
+                    if ($s->room_id == $room->id) {
+                        $schedStart = Carbon::parse($s->waktu_mulai);
+                        $schedEnd = Carbon::parse($s->waktu_selesai);
+                        
+                        // Check overlap
+                        if ($slotStart->lt($schedEnd) && $slotEnd->gt($schedStart)) {
+                            $isUsed = true;
+                            $occupiedBy = [
+                                'type' => 'REGULER',
+                                'dosen' => $s->dosen->name ?? 'Dosen',
+                                'mata_kuliah' => $s->mata_kuliah,
+                                'kelas' => $s->kelas,
+                                'waktu' => $schedStart->format('H:i') . ' - ' . $schedEnd->format('H:i')
+                            ];
+                            break;
+                        }
+                    }
+                }
+                
+                // 2. Check replacement requests (if not already found occupied)
+                if (!$isUsed) {
+                    foreach ($replacementRequests as $req) {
+                        if ($req->room_id == $room->id || $req->ruangan_usulan == $room->name) {
                             $reqStart = Carbon::parse($req->waktu_mulai_usulan);
                             $reqEnd = Carbon::parse($req->waktu_selesai_usulan);
                             
+                            // Check overlap
                             if ($slotStart->lt($reqEnd) && $slotEnd->gt($reqStart)) {
                                 $isUsed = true;
+                                $occupiedBy = [
+                                    'type' => 'PENGGANTI',
+                                    'dosen' => $req->schedule->dosen->name ?? $req->pengaju_nama ?? 'Dosen',
+                                    'mata_kuliah' => $req->schedule->mata_kuliah,
+                                    'kelas' => $req->schedule->kelas,
+                                    'waktu' => $reqStart->format('H:i') . ' - ' . $reqEnd->format('H:i')
+                                ];
                                 break;
                             }
                         }
                     }
-                    
-                    if (!$isUsed) {
-                        $availableSlots[] = [
-                            'room' => $room,
-                            'start' => $startTime,
-                            'end' => $endTime,
-                            'label' => "{$room->name} ({$startTime} - {$endTime})"
-                        ];
-                    }
                 }
-            } else {
-                // Generate time slots 07:00 to 18:00
-                $startHour = 7;
-                $endHour = 18;
                 
-                foreach ($rooms as $room) {
-                    for ($hour = $startHour; $hour < $endHour; $hour++) {
-                        for ($minute = 0; $minute < 60; $minute += 60) { // 1 hour intervals
-                            $timeStartString = sprintf('%02d:%02d:00', $hour, $minute);
-                            $timeEndString = sprintf('%02d:%02d:00', $hour + 1, $minute);
-                            
-                            $slotStart = Carbon::parse($date . ' ' . $timeStartString);
-                            $slotEnd = Carbon::parse($date . ' ' . $timeEndString);
-                            
-                            $isUsed = false;
-                            foreach ($approvedRequests as $req) {
-                                if ($req->room_id == $room->id) {
-                                    $reqStart = Carbon::parse($req->waktu_mulai_usulan);
-                                    $reqEnd = Carbon::parse($req->waktu_selesai_usulan);
-                                    
-                                    if ($slotStart->lt($reqEnd) && $slotEnd->gt($reqStart)) {
-                                        $isUsed = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if (!$isUsed) {
-                                $availableSlots[] = [
-                                    'room' => $room,
-                                    'start' => $timeStartString,
-                                    'end' => $timeEndString,
-                                    'label' => "{$room->name} ({$timeStartString} - {$timeEndString})"
-                                ];
-                            }
-                        }
-                    }
-                }
+                $roomsStatus[] = [
+                    'room' => $room,
+                    'is_available' => !$isUsed,
+                    'occupied_by' => $occupiedBy,
+                ];
             }
         }
         
-        return view('public.cari-jadwal', compact('date', 'startTime', 'endTime', 'availableSlots'));
+        return view('public.cari-jadwal', compact('date', 'startTime', 'endTime', 'roomsStatus'));
     }
 }

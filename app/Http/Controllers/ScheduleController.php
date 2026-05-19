@@ -10,8 +10,10 @@ use App\Models\Room;
 use App\Models\SlaSetting;
 use App\Models\KemahasiswaanSetting;
 use App\Models\Mahasiswa;
+use App\Models\MahasiswaJadwal;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ScheduleController extends Controller
 {
@@ -66,7 +68,7 @@ class ScheduleController extends Controller
 
         if (!$dosenId) return response()->json([]);
 
-        $query = Schedule::where('user_id', $dosenId);
+        $query = Schedule::with('room')->where('user_id', $dosenId);
         if ($periode) $query->where('periode', $periode);
 
         $schedules = $query->get();
@@ -77,6 +79,7 @@ class ScheduleController extends Controller
             if ($pendingReq)          $color = '#eab308';
             elseif ($s->status == 'Diganti') $color = '#22c55e';
 
+            $roomName = $s->room ? $s->room->name : 'N/A';
             $events[] = [
                 'id'    => $s->id,
                 'title' => $s->mata_kuliah . ' (' . $s->kelas . ')',
@@ -87,6 +90,7 @@ class ScheduleController extends Controller
                     'status'              => $s->status,
                     'pertemuan'           => $s->pertemuan,
                     'has_pending_request' => $pendingReq ? true : false,
+                    'room'                => $roomName,
                 ],
             ];
         }
@@ -101,56 +105,135 @@ class ScheduleController extends Controller
 
     public function checkAvailability(Request $request)
     {
-        $date    = Carbon::parse($request->get('date'));
-        $dosenId = $request->get('dosen_id');
-        $room    = $request->get('room');
+        $date      = $request->get('date');
+        $startTime = $request->get('start_time', '07:30');
+        $endTime   = $request->get('end_time', '09:40');
+        $dosenId   = $request->get('dosen_id');
+        $roomName  = $request->get('room');
 
-        if (!$dosenId) return response()->json(['error' => 'dosen_id required'], 400);
+        if (!$dosenId || !$date) {
+            return response()->json(['error' => 'dosen_id and date are required'], 400);
+        }
 
-        $isSunday = $date->isSunday();
+        $proposedStart = Carbon::parse($date . ' ' . $startTime);
+        $proposedEnd   = Carbon::parse($date . ' ' . $endTime);
+        $isSunday      = Carbon::parse($date)->isSunday();
 
+        // 1. Check if the Dosen has an active regular class overlap at this time
         $dosenSchedules = Schedule::where('user_id', $dosenId)
-            ->whereDate('waktu_mulai', $date)->get();
+            ->whereDate('waktu_mulai', $date)
+            ->where('status', '!=', 'Diganti')
+            ->get();
+            
+        $dosenScheduleConflict = false;
+        foreach ($dosenSchedules as $s) {
+            $sStart = Carbon::parse($s->waktu_mulai);
+            $sEnd   = Carbon::parse($s->waktu_selesai);
+            if ($proposedStart->lt($sEnd) && $proposedEnd->gt($sStart)) {
+                $dosenScheduleConflict = true;
+                break;
+            }
+        }
 
-        // Also check pending/approved replacement requests on that date
-        $dosenRequests = ScheduleRequest::whereHas('schedule', function($q) use ($dosenId) { $q->where('user_id', $dosenId); })
+        // 2. Check if the Dosen has any approved/pending replacement requests overlap at this time
+        $dosenRequests = ScheduleRequest::whereHas('schedule', function($q) use ($dosenId) { 
+                $q->where('user_id', $dosenId); 
+            })
             ->whereDate('waktu_mulai_usulan', $date)
             ->whereIn('status', ['Pending', 'Disetujui'])
             ->get();
 
-        $roomConflicts = [];
-        if ($room) {
-            $roomConflicts = ScheduleRequest::where('ruangan_usulan', $room)
-                ->whereDate('waktu_mulai_usulan', $date)
-                ->whereIn('status', ['Pending', 'Disetujui'])
-                ->with('schedule.dosen')
+        $dosenRequestConflict = false;
+        foreach ($dosenRequests as $req) {
+            $rStart = Carbon::parse($req->waktu_mulai_usulan);
+            $rEnd   = Carbon::parse($req->waktu_selesai_usulan);
+            if ($proposedStart->lt($rEnd) && $proposedEnd->gt($rStart)) {
+                $dosenRequestConflict = true;
+                break;
+            }
+        }
+
+        // 3. Check if the selected Room is occupied (regular schedule or replacement request)
+        $roomRecord = null;
+        $roomConflict = null;
+        if ($roomName) {
+            $roomRecord = Room::where('name', $roomName)->first();
+            
+            // Check regular weekly schedules in this room
+            $roomSchedules = Schedule::where(function($q) use ($roomRecord, $roomName) {
+                    if ($roomRecord) {
+                        $q->where('room_id', $roomRecord->id);
+                    } else {
+                        $q->where('ruangan_usulan', $roomName); // fallback
+                    }
+                })
+                ->whereDate('waktu_mulai', $date)
+                ->where('status', '!=', 'Diganti')
+                ->with('dosen')
                 ->get();
 
-            // Also check from rooms table
-            $roomRecord = Room::where('name', $room)->first();
-            if ($roomRecord) {
-                $fromRoomTable = ScheduleRequest::where('room_id', $roomRecord->id)
+            foreach ($roomSchedules as $s) {
+                $sStart = Carbon::parse($s->waktu_mulai);
+                $sEnd   = Carbon::parse($s->waktu_selesai);
+                if ($proposedStart->lt($sEnd) && $proposedEnd->gt($sStart)) {
+                    $roomConflict = [
+                        'type' => 'Jadwal Reguler',
+                        'dosen' => $s->dosen->name ?? 'Dosen',
+                        'mata_kuliah' => $s->mata_kuliah,
+                        'kelas' => $s->kelas,
+                        'waktu' => $sStart->format('H:i') . ' - ' . $sEnd->format('H:i')
+                    ];
+                    break;
+                }
+            }
+
+            // Check replacement requests in this room
+            if (!$roomConflict) {
+                $roomRequests = ScheduleRequest::where(function($q) use ($roomRecord, $roomName) {
+                        if ($roomRecord) {
+                            $q->where('room_id', $roomRecord->id)->orWhere('ruangan_usulan', $roomName);
+                        } else {
+                            $q->where('ruangan_usulan', $roomName);
+                        }
+                    })
                     ->whereDate('waktu_mulai_usulan', $date)
                     ->whereIn('status', ['Pending', 'Disetujui'])
                     ->with('schedule.dosen')
                     ->get();
-                $roomConflicts = collect($roomConflicts)->merge($fromRoomTable)->unique('id')->values();
+
+                foreach ($roomRequests as $req) {
+                    $rStart = Carbon::parse($req->waktu_mulai_usulan);
+                    $rEnd   = Carbon::parse($req->waktu_selesai_usulan);
+                    if ($proposedStart->lt($rEnd) && $proposedEnd->gt($rStart)) {
+                        $roomConflict = [
+                            'type' => 'Pengganti (' . $req->status . ')',
+                            'dosen' => $req->schedule->dosen->name ?? $req->pengaju_nama ?? 'Dosen',
+                            'mata_kuliah' => $req->schedule->mata_kuliah,
+                            'kelas' => $req->schedule->kelas,
+                            'waktu' => $rStart->format('H:i') . ' - ' . $rEnd->format('H:i')
+                        ];
+                        break;
+                    }
+                }
             }
         }
 
         return response()->json([
-            'is_sunday'      => $isSunday,
-            'schedules'      => $dosenSchedules,
-            'dosen_requests' => $dosenRequests,
-            'room_conflicts' => $roomConflicts,
+            'is_sunday'                => $isSunday,
+            'dosen_schedule_conflict'  => $dosenScheduleConflict,
+            'dosen_request_conflict'   => $dosenRequestConflict,
+            'room_conflict'            => $roomConflict,
+            'room_details'             => $roomRecord ? [
+                'name'     => $roomRecord->name,
+                'type'     => $roomRecord->type,
+                'capacity' => $roomRecord->capacity,
+            ] : null,
         ]);
     }
 
-    // ── Views ────────────────────────────────────────────────────────────────
-
     public function requestChange($id)
     {
-        $schedule = Schedule::with('dosen')->findOrFail($id);
+        $schedule = Schedule::with(['dosen', 'room'])->findOrFail($id);
         $rooms    = Room::where('is_active', true)->orderBy('name')->get();
         return view('schedules.request', compact('schedule', 'rooms'));
     }
@@ -159,13 +242,14 @@ class ScheduleController extends Controller
     {
         $dosenId = $request->get('dosen_id');
         $date    = $request->get('date');
+        $prefilledRoom = $request->get('room');
 
         if (!$dosenId) {
             return redirect()->route('schedules.public')->with('error', 'Silakan pilih dosen terlebih dahulu.');
         }
 
         $dosen     = User::findOrFail($dosenId);
-        $schedules = Schedule::where('user_id', $dosenId)->where('status', 'Terjadwal')->get();
+        $schedules = Schedule::with('room')->where('user_id', $dosenId)->where('status', 'Terjadwal')->get();
         $rooms     = Room::where('is_active', true)->orderBy('name')->get();
 
         $prefilledTime = null;
@@ -177,7 +261,79 @@ class ScheduleController extends Controller
             }
         }
 
-        return view('schedules.request_new', compact('dosen', 'schedules', 'prefilledTime', 'rooms'));
+        return view('schedules.request_new', compact('dosen', 'schedules', 'prefilledTime', 'rooms', 'prefilledRoom'));
+    }
+
+    // ── API: Jadwal Mahasiswa by NIM ──────────────────────────────────────────
+
+    /**
+     * GET /api/mahasiswa/{nim}/jadwal
+     * Kembalikan daftar jadwal (mata kuliah, dosen, jam, ruangan) milik mahasiswa.
+     * Sumber data: mahasiswa_jadwal pivot ATAU fallback kelas-matching.
+     */
+    public function apiMahasiswaJadwal(Request $request, $nim)
+    {
+        $periode = $request->get('periode');
+
+        $mahasiswa = Mahasiswa::where('nim', $nim)->with('prodi')->first();
+        if (!$mahasiswa) {
+            return response()->json(['error' => 'Mahasiswa tidak ditemukan.'], 404);
+        }
+
+        // Cari lewat pivot dulu
+        $pivotQuery = Schedule::join('mahasiswa_jadwal', 'schedules.id', '=', 'mahasiswa_jadwal.schedule_id')
+            ->where('mahasiswa_jadwal.mahasiswa_id', $mahasiswa->id)
+            ->with(['dosen', 'room', 'prodi']);
+        if ($periode) $pivotQuery->where('schedules.periode', $periode);
+        $pivotSchedules = $pivotQuery->select('schedules.*', 'mahasiswa_jadwal.tipe_enrollment')
+            ->orderBy('schedules.waktu_mulai')
+            ->get();
+
+        // Fallback: kelas-matching jika pivot kosong
+        if ($pivotSchedules->isEmpty() && $mahasiswa->kelas) {
+            $kelasQuery = Schedule::where('kelas', $mahasiswa->kelas)
+                ->with(['dosen', 'room', 'prodi']);
+            if ($periode) $kelasQuery->where('periode', $periode);
+            $pivotSchedules = $kelasQuery->orderBy('waktu_mulai')->get()
+                ->map(function($s) use ($mahasiswa) {
+                    $s->tipe_enrollment = $mahasiswa->status_mengulang ? 'pengulang' : 'reguler';
+                    return $s;
+                });
+        }
+
+        $result = $pivotSchedules->map(function($s) {
+            return [
+                'id'              => $s->id,
+                'mata_kuliah'     => $s->mata_kuliah,
+                'kelas'           => $s->kelas,
+                'pertemuan'       => $s->pertemuan,
+                'dosen_id'        => $s->user_id,
+                'dosen_nama'      => $s->dosen->name ?? '-',
+                'waktu_mulai'     => $s->waktu_mulai,
+                'waktu_selesai'   => $s->waktu_selesai,
+                'hari'            => \Carbon\Carbon::parse($s->waktu_mulai)->isoFormat('dddd'),
+                'jam'             => \Carbon\Carbon::parse($s->waktu_mulai)->format('H:i') . ' - ' . \Carbon\Carbon::parse($s->waktu_selesai)->format('H:i'),
+                'ruangan'         => $s->room->name ?? ($s->ruangan_usulan ?? '-'),
+                'ruangan_tipe'    => $s->room->type ?? '-',
+                'periode'         => $s->periode,
+                'status'          => $s->status,
+                'tipe_enrollment' => $s->tipe_enrollment ?? 'reguler',
+                'prodi'           => $s->prodi->name ?? '-',
+            ];
+        });
+
+        return response()->json([
+            'mahasiswa' => [
+                'nim'              => $mahasiswa->nim,
+                'nama'             => $mahasiswa->nama,
+                'email'            => $mahasiswa->email,
+                'kelas'            => $mahasiswa->kelas,
+                'status_mengulang' => $mahasiswa->status_mengulang,
+                'prodi'            => $mahasiswa->prodi->name ?? '-',
+            ],
+            'jadwals'   => $result,
+            'total'     => $result->count(),
+        ]);
     }
 
     // ── Store (supports anonymous) ────────────────────────────────────────────
@@ -219,55 +375,64 @@ class ScheduleController extends Controller
 
         $isPengulang = false;
         $isBentrokMahasiswa = false;
+        $aiSolution = null;
 
         if ($request->pengaju_type === 'mahasiswa') {
-            $nimNidn  = $request->pengaju_nim_nidn ?? ($request->pengaju_nim_nidn);
+            $nimNidn = $request->pengaju_nim_nidn;
             
-            // Check student SKS limit (< 6 SKS)
-            $existingRequests = ScheduleRequest::where('pengaju_nim_nidn', $nimNidn)
-                ->where('pengaju_type', 'mahasiswa')
-                ->whereIn('status', ['Pending', 'Disetujui'])
-                ->with('schedule')
-                ->get();
-            
-            $totalSks = 0;
-            foreach ($existingRequests as $req) {
-                $sks = 3; // default
-                if (preg_match('/\((\d+)\s*SKS\)/i', $req->schedule->mata_kuliah, $matches)) {
-                    $sks = (int)$matches[1];
-                }
-                $totalSks += $sks;
-            }
-            
-            // Current request SKS
-            $currentSks = 3;
-            if (preg_match('/\((\d+)\s*SKS\)/i', $schedule->mata_kuliah, $matches)) {
-                $currentSks = (int)$matches[1];
-            }
-            
-            if (($totalSks + $currentSks) > 6) {
-                return back()->withErrors([
-                    'pengaju_nim_nidn' => "Total SKS pergantian jadwal tidak boleh lebih dari 6 SKS. SKS diajukan: {$totalSks} SKS, Usulan ini: {$currentSks} SKS.",
+            // Get or create Mahasiswa record to access their status
+            $mahasiswa = Mahasiswa::where('nim', $nimNidn)->first();
+            if (!$mahasiswa) {
+                $mahasiswa = Mahasiswa::create([
+                    'nim' => $nimNidn,
+                    'nama' => $request->pengaju_nama ?? 'Mahasiswa Baru',
+                    'email' => $request->pengaju_email,
+                    'prodi_id' => $schedule->prodi_id,
+                    'kelas' => $schedule->kelas,
+                    'status_mengulang' => (stripos($schedule->kelas, 'pengulang') !== false || stripos($schedule->mata_kuliah, 'pengulang') !== false)
                 ]);
             }
+            
+            $isPengulang = $mahasiswa->status_mengulang;
 
-            // Check if Pengulang (assume based on class containing 'PENGULANG' or 'R')
-            if (stripos($schedule->kelas, 'pengulang') !== false || stripos($schedule->mata_kuliah, 'pengulang') !== false) {
-                $isPengulang = true;
-            }
-
-            // Check if bentrok with other requests from the same student
-            foreach ($existingRequests as $req) {
-                if ($req->waktu_mulai_usulan < $request->waktu_selesai_usulan && $req->waktu_selesai_usulan > $request->waktu_mulai_usulan) {
-                    $isBentrokMahasiswa = true;
-                    break;
+            // Check student SKS limit (< 6 SKS) for repeating student
+            if ($isPengulang) {
+                $existingRequests = ScheduleRequest::where('pengaju_nim_nidn', $nimNidn)
+                    ->where('pengaju_type', 'mahasiswa')
+                    ->whereIn('status', ['Pending', 'Disetujui'])
+                    ->with('schedule')
+                    ->get();
+                
+                $totalSks = 0;
+                foreach ($existingRequests as $req) {
+                    $sks = 3; // default
+                    if (preg_match('/\((\d+)\s*SKS\)/i', $req->schedule->mata_kuliah, $matches)) {
+                        $sks = (int)$matches[1];
+                    }
+                    $totalSks += $sks;
+                }
+                
+                // Current request SKS
+                $currentSks = 3;
+                if (preg_match('/\((\d+)\s*SKS\)/i', $schedule->mata_kuliah, $matches)) {
+                    $currentSks = (int)$matches[1];
+                }
+                
+                if (($totalSks + $currentSks) >= 6) {
+                    return back()->withErrors([
+                        'pengaju_nim_nidn' => "Mahasiswa dengan status mengulang hanya diperbolehkan mengajukan pergantian kelas kurang dari 6 SKS. Total SKS yang diajukan sebelumnya: {$totalSks} SKS, kelas ini: {$currentSks} SKS. Total SKS: " . ($totalSks + $currentSks) . " SKS.",
+                    ])->withInput();
                 }
             }
         }
 
         $request->validate($rules);
 
-        // Clash detection
+        // Perform Clash Check
+        $isBentrok = false;
+        $bentrokDetails = [];
+
+        // 1. Clash with lecturer schedules
         $clash = Schedule::where('user_id', $dosenId)
             ->where('id', '!=', $id)
             ->where('waktu_mulai', '<', $request->waktu_selesai_usulan)
@@ -275,19 +440,100 @@ class ScheduleController extends Controller
             ->first();
 
         if ($clash) {
-            return back()->withErrors(['waktu_mulai_usulan' => 'Jadwal usulan bentrok dengan jadwal Dosen ini yang lain (' . $clash->mata_kuliah . ').']);
+            $isBentrok = true;
+            $bentrokDetails[] = "Jadwal Dosen mengajar yang lain (" . $clash->mata_kuliah . " - Kelas " . $clash->kelas . ")";
         }
 
-        // Room conflict check
-        $roomConflict = ScheduleRequest::where('ruangan_usulan', $request->ruangan_usulan)
+        // 2. Room conflict (Schedule)
+        $roomRecord = Room::where('name', $request->ruangan_usulan)->first();
+        $roomClashSchedule = Schedule::where(function($q) use ($roomRecord, $request) {
+                if ($roomRecord) {
+                    $q->where('room_id', $roomRecord->id);
+                } else {
+                    $q->where('ruangan_usulan', $request->ruangan_usulan);
+                }
+            })
+            ->whereDate('waktu_mulai', $request->waktu_mulai_usulan_date)
+            ->where('status', '!=', 'Diganti')
+            ->where('waktu_mulai', '<', $request->waktu_selesai_usulan)
+            ->where('waktu_selesai', '>', $request->waktu_mulai_usulan)
+            ->first();
+
+        if ($roomClashSchedule) {
+            $isBentrok = true;
+            $bentrokDetails[] = "Ruangan digunakan jadwal reguler: " . $roomClashSchedule->mata_kuliah . " (" . $roomClashSchedule->kelas . ")";
+        }
+
+        // 3. Room conflict (Requests)
+        $roomConflictReq = ScheduleRequest::where(function($q) use ($roomRecord, $request) {
+                if ($roomRecord) {
+                    $q->where('room_id', $roomRecord->id)->orWhere('ruangan_usulan', $request->ruangan_usulan);
+                } else {
+                    $q->where('ruangan_usulan', $request->ruangan_usulan);
+                }
+            })
             ->where('waktu_mulai_usulan', '<', $request->waktu_selesai_usulan)
             ->where('waktu_selesai_usulan', '>', $request->waktu_mulai_usulan)
             ->whereIn('status', ['Pending', 'Disetujui'])
             ->where('schedule_id', '!=', $id)
             ->first();
 
-        if ($roomConflict) {
-            return back()->withErrors(['ruangan_usulan' => 'Ruangan ini sudah digunakan oleh pengajuan lain pada waktu yang sama.']);
+        if ($roomConflictReq) {
+            $isBentrok = true;
+            $bentrokDetails[] = "Ruangan digunakan pengajuan lain: " . $roomConflictReq->schedule->mata_kuliah . " (" . $roomConflictReq->schedule->kelas . ")";
+        }
+
+        // 4. Clash with Student Schedules (if student)
+        if ($request->pengaju_type === 'mahasiswa' && isset($mahasiswa)) {
+            // Check student's regular class schedules
+            $studentRegularConflict = Schedule::where('kelas', $mahasiswa->kelas)
+                ->where('status', '!=', 'Diganti')
+                ->where('id', '!=', $schedule->id)
+                ->where('waktu_mulai', '<', $request->waktu_selesai_usulan)
+                ->where('waktu_selesai', '>', $request->waktu_mulai_usulan)
+                ->first();
+
+            if ($studentRegularConflict) {
+                $isBentrok = true;
+                $bentrokDetails[] = "Jadwal kuliah reguler kelas Anda (" . $studentRegularConflict->mata_kuliah . " - Kelas " . $studentRegularConflict->kelas . ")";
+            }
+
+            // Check student's other replacement requests
+            $studentRequestConflict = ScheduleRequest::where('pengaju_nim_nidn', $nimNidn)
+                ->where('pengaju_type', 'mahasiswa')
+                ->whereIn('status', ['Pending', 'Disetujui'])
+                ->where('schedule_id', '!=', $id)
+                ->where('waktu_mulai_usulan', '<', $request->waktu_selesai_usulan)
+                ->where('waktu_selesai_usulan', '>', $request->waktu_mulai_usulan)
+                ->first();
+
+            if ($studentRequestConflict) {
+                $isBentrok = true;
+                $bentrokDetails[] = "Jadwal pengajuan kelas Anda yang lain (" . $studentRequestConflict->schedule->mata_kuliah . ")";
+            }
+        }
+
+        // Handle Conflict Resolution
+        if ($isBentrok) {
+            if ($request->pengaju_type === 'mahasiswa' && $isPengulang) {
+                // Repeating student: ALLOW submission but generate AI Recommendation!
+                $isBentrokMahasiswa = true;
+                
+                // Find alternative slot on same day
+                $altSlot = $this->findAlternativeSlot($schedule, $mahasiswa, $request->waktu_mulai_usulan_date, $request->ruangan_usulan);
+                
+                $aiSolution = "\n\n🤖 [AI SOLUSI BENTROK - MAHASISWA MENGULANG]:\n";
+                $aiSolution .= "- Terdeteksi bentrok dengan: " . implode(', ', $bentrokDetails) . ".\n";
+                if ($altSlot) {
+                    $aiSolution .= "- Solusi Terbaik AI: Silakan geser usulan jam ke " . $altSlot['label'] . " (" . $altSlot['jam_mulai'] . " - " . $altSlot['jam_selesai'] . ") pada hari yang sama karena slot tersebut sepenuhnya KOSONG bagi Anda, Dosen, dan Ruangan.";
+                } else {
+                    $aiSolution .= "- Solusi Terbaik AI: Tidak ditemukan sesi kosong pada hari ini. Disarankan koordinasi dengan Dosen Pengampu (" . $schedule->dosen->name . ") untuk kuliah daring (centang opsi Daring) agar fleksibel, atau ajukan pada hari lain.";
+                }
+            } else {
+                // Reguler student or Lecturer: BLOCK and fail validation
+                $errorMessage = "Jadwal usulan bentrok dengan:\n" . implode("\n", $bentrokDetails);
+                return back()->withErrors(['waktu_mulai_usulan' => $errorMessage])->withInput();
+            }
         }
 
         // Determine SLA deadline
@@ -304,12 +550,15 @@ class ScheduleController extends Controller
         }
 
         $badgeNotes = [];
-        if (isset($isPengulang) && $isPengulang) $badgeNotes[] = '[PENGULANG]';
-        if (isset($isBentrokMahasiswa) && $isBentrokMahasiswa) $badgeNotes[] = '[BENTROK]';
+        if ($isPengulang) $badgeNotes[] = '[PENGULANG]';
+        if ($isBentrokMahasiswa) $badgeNotes[] = '[BENTROK]';
 
         $finalAlasan = $request->alasan;
         if (!empty($badgeNotes)) {
             $finalAlasan = implode(' ', $badgeNotes) . ' - ' . $finalAlasan;
+        }
+        if ($aiSolution) {
+            $finalAlasan .= $aiSolution;
         }
 
         $scheduleRequest = ScheduleRequest::create([
@@ -329,18 +578,6 @@ class ScheduleController extends Controller
             'sla_deadline'        => $slaDeadline,
         ]);
 
-        // Auto-register mahasiswa if not exists
-        if ($request->pengaju_type === 'mahasiswa' && $request->pengaju_nim_nidn) {
-            Mahasiswa::firstOrCreate(
-                ['nim' => $request->pengaju_nim_nidn],
-                [
-                    'nama'     => $request->pengaju_nama ?? 'Unknown',
-                    'email'    => $request->pengaju_email,
-                    'prodi_id' => $schedule->prodi_id,
-                ]
-            );
-        }
-
         // Notify Kaprodi
         $kaprodi = User::where('role', 'kaprodi')->where('prodi_id', $schedule->prodi_id)->first();
         if ($kaprodi) {
@@ -356,5 +593,103 @@ class ScheduleController extends Controller
         return redirect()->route('schedules.public', ['dosen_id' => $dosenId, 'periode' => $schedule->periode])
             ->with('success', 'Permohonan pergantian jadwal berhasil diajukan.')
             ->with('success_request_id', $scheduleRequest->id);
+    }
+
+    /**
+     * Scan LPKIA default lecture sessions to find a fully vacant slot.
+     */
+    private function findAlternativeSlot($schedule, $mahasiswa, $date, $roomName)
+    {
+        $sessions = \DB::table('jam_kuliahs')->where('is_active', true)->orderBy('urutan')->get();
+        $dosenId = $schedule->user_id;
+        
+        foreach ($sessions as $session) {
+            $startStr = $date . ' ' . $session->jam_mulai;
+            $endStr = $date . ' ' . $session->jam_selesai;
+            $start = Carbon::parse($startStr);
+            $end = Carbon::parse($endStr);
+            
+            // Check Dosen schedules
+            $dosenScheduleConflict = Schedule::where('user_id', $dosenId)
+                ->where('status', '!=', 'Diganti')
+                ->where('waktu_mulai', '<', $end)
+                ->where('waktu_selesai', '>', $start)
+                ->exists();
+                
+            if ($dosenScheduleConflict) continue;
+            
+            // Check Dosen requests
+            $dosenRequestConflict = ScheduleRequest::whereHas('schedule', function($q) use ($dosenId) {
+                    $q->where('user_id', $dosenId);
+                })
+                ->whereDate('waktu_mulai_usulan', $date)
+                ->whereIn('status', ['Pending', 'Disetujui'])
+                ->where('waktu_mulai_usulan', '<', $end)
+                ->where('waktu_selesai_usulan', '>', $start)
+                ->exists();
+                
+            if ($dosenRequestConflict) continue;
+            
+            // Check student schedules (regular class)
+            $studentScheduleConflict = false;
+            if ($mahasiswa && $mahasiswa->kelas) {
+                $studentScheduleConflict = Schedule::where('kelas', $mahasiswa->kelas)
+                    ->where('status', '!=', 'Diganti')
+                    ->where('waktu_mulai', '<', $end)
+                    ->where('waktu_selesai', '>', $start)
+                    ->exists();
+            }
+            
+            if ($studentScheduleConflict) continue;
+            
+            // Check room conflict
+            $roomConflict = false;
+            if ($roomName) {
+                $roomRecord = Room::where('name', $roomName)->first();
+                
+                $roomScheduleConflict = Schedule::where(function($q) use ($roomRecord, $roomName) {
+                        if ($roomRecord) {
+                            $q->where('room_id', $roomRecord->id);
+                        } else {
+                            $q->where('ruangan_usulan', $roomName);
+                        }
+                    })
+                    ->whereDate('waktu_mulai', $date)
+                    ->where('status', '!=', 'Diganti')
+                    ->where('waktu_mulai', '<', $end)
+                    ->where('waktu_selesai', '>', $start)
+                    ->exists();
+                    
+                if ($roomScheduleConflict) {
+                    continue;
+                }
+                
+                $roomReqConflict = ScheduleRequest::where(function($q) use ($roomRecord, $roomName) {
+                        if ($roomRecord) {
+                            $q->where('room_id', $roomRecord->id)->orWhere('ruangan_usulan', $roomName);
+                        } else {
+                            $q->where('ruangan_usulan', $roomName);
+                        }
+                    })
+                    ->whereDate('waktu_mulai_usulan', $date)
+                    ->whereIn('status', ['Pending', 'Disetujui'])
+                    ->where('waktu_mulai_usulan', '<', $end)
+                    ->where('waktu_selesai_usulan', '>', $start)
+                    ->exists();
+                    
+                if ($roomReqConflict) {
+                    continue;
+                }
+            }
+            
+            // If we reach here, this session slot is 100% free for Dosen, Student, and Room!
+            return [
+                'label' => $session->label,
+                'jam_mulai' => Carbon::parse($session->jam_mulai)->format('H:i'),
+                'jam_selesai' => Carbon::parse($session->jam_selesai)->format('H:i'),
+            ];
+        }
+        
+        return null;
     }
 }

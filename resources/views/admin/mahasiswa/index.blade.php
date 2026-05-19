@@ -61,7 +61,9 @@
                     <form action="{{ route('admin.mahasiswa.import') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         <div>
-                            <label class="block text-xs text-gray-500 mb-2">Upload file CSV mahasiswa dengan format kolom: <br><strong class="text-gray-700 font-bold">name, nim, email, prodi_name, kelas_name</strong></label>
+                            <label class="block text-xs text-gray-500 mb-2">Upload file CSV mahasiswa dengan format kolom: <br>
+                                <strong class="text-gray-700 font-bold">name, nim, email, prodi_name, kelas_name, status_mengulang</strong>
+                                <br><span class="text-amber-600">*status_mengulang: isi 1 (mengulang) atau 0 (reguler)</span></label>
                             <input type="file" name="csv_file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                         </div>
                         <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Mulai Import</button>
@@ -80,6 +82,7 @@
                                 <th class="px-5 py-4 border-b-2 border-gray-100 bg-gray-50 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">NIM</th>
                                 <th class="px-5 py-4 border-b-2 border-gray-100 bg-gray-50 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Kelas</th>
                                 <th class="px-5 py-4 border-b-2 border-gray-100 bg-gray-50 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Program Studi</th>
+                                <th class="px-5 py-4 border-b-2 border-gray-100 bg-gray-50 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
                                 <th class="px-5 py-4 border-b-2 border-gray-100 bg-gray-50 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
@@ -99,6 +102,13 @@
                                     </td>
                                     <td class="px-5 py-4 bg-white text-sm font-medium text-gray-900">
                                         {{ $item->prodi->name ?? '-' }}
+                                    </td>
+                                    <td class="px-5 py-4 bg-white text-sm font-medium">
+                                        @if($item->status_mengulang)
+                                            <span class="px-2 py-1 rounded bg-red-100 text-red-700 font-bold text-xs">MENGULANG</span>
+                                        @else
+                                            <span class="px-2 py-1 rounded bg-green-100 text-green-700 font-bold text-xs">REGULER</span>
+                                        @endif
                                     </td>
                                     <td class="px-5 py-4 bg-white text-sm">
                                         <div class="flex space-x-3">

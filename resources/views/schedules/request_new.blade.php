@@ -48,36 +48,116 @@
                 </div>
                 <input type="hidden" name="pengaju_type" :value="pengajuType">
 
-                @guest
-                {{-- Anonymous fields - shown when not logged in --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {{-- Fields for Dosen --}}
+                <div x-show="pengajuType === 'dosen'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">
-                            <span x-text="pengajuType==='mahasiswa' ? 'Nama Mahasiswa' : 'Nama Dosen'"></span> *
-                        </label>
-                        <input type="text" name="pengaju_nama" required placeholder="Nama lengkap"
-                            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Nama Dosen</label>
+                        <input type="text" name="pengaju_nama_dosen" placeholder="Nama dosen"
+                            value="{{ $dosen->name }}" readonly
+                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-600 cursor-not-allowed">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">
-                            <span x-text="pengajuType==='mahasiswa' ? 'NIM' : 'NIDN'"></span> *
-                        </label>
-                        <input type="text" name="pengaju_nim_nidn" required :placeholder="pengajuType==='mahasiswa' ? '12345678' : '0401019001'"
-                            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Email (Opsional)</label>
-                        <input type="email" name="pengaju_email" placeholder="email@contoh.com"
-                            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">NIDN</label>
+                        <input type="text" name="pengaju_nidn_dosen" placeholder="NIDN"
+                            value="" readonly
+                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-600 cursor-not-allowed">
                     </div>
                 </div>
 
-                {{-- Mahasiswa quota display --}}
-                <div x-show="pengajuType==='mahasiswa'" class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Batas pengajuan mahasiswa berlaku. Pastikan NIM yang dimasukkan benar.
+                {{-- Fields for Mahasiswa -- smart NIM lookup --}}
+                <div x-show="pengajuType === 'mahasiswa'" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">NIM / NRP *</label>
+                            <div class="relative">
+                                <input type="text" name="pengaju_nim_nidn" id="nim_input"
+                                    x-model="studentNim"
+                                    @input.debounce.600ms="lookupMahasiswa()"
+                                    :required="pengajuType === 'mahasiswa'"
+                                    placeholder="Masukkan NIM, sistem akan cek otomatis..."
+                                    class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-10">
+                                <div x-show="nimLoading" class="absolute right-3 top-3.5">
+                                    <svg class="animate-spin w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Nama Mahasiswa *</label>
+                            <input type="text" name="pengaju_nama" id="nama_input"
+                                x-model="studentNama"
+                                :required="pengajuType === 'mahasiswa'"
+                                placeholder="Otomatis terisi saat NIM valid..."
+                                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Email (Opsional)</label>
+                            <input type="email" name="pengaju_email" id="email_input"
+                                x-model="studentEmail"
+                                placeholder="email@contoh.com"
+                                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    {{-- Student Info Panel (shown after NIM lookup) --}}
+                    <div x-show="studentInfo !== null" x-transition class="rounded-xl border-2 overflow-hidden"
+                         :class="studentInfo && studentInfo.status_mengulang ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'">
+                        <div class="flex items-center justify-between px-5 py-3"
+                             :class="studentInfo && studentInfo.status_mengulang ? 'bg-red-100' : 'bg-green-100'">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black text-white"
+                                     :class="studentInfo && studentInfo.status_mengulang ? 'bg-red-500' : 'bg-green-600'"
+                                     x-text="studentInfo ? studentInfo.nama.charAt(0).toUpperCase() : ''"></div>
+                                <div>
+                                    <div class="font-bold text-gray-900 text-sm" x-text="studentInfo ? studentInfo.nama : ''"></div>
+                                    <div class="text-xs text-gray-600" x-text="studentInfo ? (studentInfo.prodi + ' — Kelas ' + studentInfo.kelas) : ''"></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-black uppercase"
+                                      :class="studentInfo && studentInfo.status_mengulang ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'"
+                                      x-text="studentInfo && studentInfo.status_mengulang ? '⚠ Mengulang (maks. <6 SKS)' : '✓ Status Reguler'"></span>
+                            </div>
+                        </div>
+
+                        {{-- Student's Course List --}}
+                        <div x-show="studentJadwals && studentJadwals.length > 0" class="px-5 py-4">
+                            <div class="text-xs font-bold uppercase text-gray-500 mb-3">
+                                📚 Jadwal Perkuliahan Mahasiswa Ini (<span x-text="studentJadwals ? studentJadwals.length : 0"></span> mata kuliah):
+                            </div>
+                            <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                <template x-for="j in studentJadwals" :key="j.id">
+                                    <div class="flex items-center justify-between bg-white/70 rounded-lg px-3 py-2 text-xs border border-white/50">
+                                        <div class="font-semibold text-gray-800" x-text="j.mata_kuliah"></div>
+                                        <div class="flex items-center gap-3 text-gray-500 shrink-0 ml-3">
+                                            <span class="font-medium" x-text="j.dosen_nama"></span>
+                                            <span class="bg-gray-100 px-2 py-0.5 rounded font-bold text-gray-700" x-text="j.hari + ', ' + j.jam"></span>
+                                            <span class="bg-indigo-100 px-2 py-0.5 rounded text-indigo-700 font-bold" x-text="j.ruangan"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div x-show="studentJadwals && studentJadwals.length === 0" class="px-5 py-3 text-xs text-gray-500">
+                            ℹ️ Belum ada data jadwal untuk kelas mahasiswa ini. Sistem tidak bisa melakukan pengecekan bentrok otomatis.
+                        </div>
+                    </div>
+
+                    {{-- NIM not found warning --}}
+                    <div x-show="nimNotFound" x-transition
+                         class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 flex items-start gap-2">
+                        <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <div>
+                            <div class="font-bold">NIM tidak ditemukan di sistem.</div>
+                            <div class="text-xs mt-0.5">Mahasiswa baru akan otomatis didaftarkan saat pengajuan disimpan. Pastikan nama dan email diisi dengan benar.</div>
+                        </div>
+                    </div>
                 </div>
-                @endguest
+
             </div>
 
             {{-- Original Schedule --}}
@@ -88,7 +168,7 @@
                     <option value="">-- Pilih Mata Kuliah / Jadwal --</option>
                     @foreach($schedules as $s)
                     <option value="{{ $s->id }}"
-                        data-details="{{ $s->mata_kuliah }} — Kelas {{ $s->kelas }}, Pertemuan {{ $s->pertemuan }} | {{ \Carbon\Carbon::parse($s->waktu_mulai)->format('l, d M Y H:i') }}">
+                        data-details="{{ $s->mata_kuliah }} — Kelas {{ $s->kelas }}, Pertemuan {{ $s->pertemuan }} | {{ \Carbon\Carbon::parse($s->waktu_mulai)->format('l, d M Y H:i') }} | Ruangan Asli: {{ $s->room->name ?? '-' }} ({{ $s->room->type ?? 'N/A' }})">
                         {{ $s->mata_kuliah }} ({{ $s->kelas }}) — Pert. {{ $s->pertemuan }}
                     </option>
                     @endforeach
@@ -98,65 +178,81 @@
             </div>
 
             {{-- Proposed Schedule --}}
+            {{-- Proposed Schedule & Room --}}
             <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/60 p-6">
-                <h3 class="text-xs font-bold text-purple-600 uppercase tracking-widest mb-4">2 — Usulan Jadwal Pengganti</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <h3 class="text-xs font-bold text-purple-600 uppercase tracking-widest mb-4">2 — Usulan Jadwal & Ruangan Pengganti</h3>
+                
+                <!-- First Row: Tanggal and Ruangan Usulan -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Tanggal</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Tanggal Usulan *</label>
                         <input type="date" name="waktu_mulai_usulan_date" x-model="proposedDate" @change="checkAvailability()" required
                             class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Jam Mulai</label>
-                        <input type="time" name="waktu_mulai_usulan_time" x-model="proposedStart" required
-                            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Jam Selesai</label>
-                        <input type="time" name="waktu_selesai_usulan_time" x-model="proposedEnd" required
-                            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500">
-                    </div>
-                </div>
-
-                {{-- Availability badge --}}
-                <div x-show="proposedDate" x-transition class="mt-4 p-4 rounded-xl border flex items-center gap-3" :class="statusColor">
-                    <span :class="statusTextColor" x-html="statusIcon"></span>
-                    <span class="text-sm font-semibold" :class="statusTextColor" x-text="statusTitle"></span>
-                </div>
-            </div>
-
-            {{-- Room & Reason --}}
-            <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/60 p-6">
-                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">3 — Ruangan & Alasan</h3>
-                <div class="space-y-4">
-                    <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Ruangan Usulan *</label>
-                        <input type="text" name="ruangan_usulan" x-model="proposedRoom"
-                            @input.debounce.600ms="checkAvailability()" required
-                            list="roomSuggestions"
-                            placeholder="Ketik nama ruangan atau pilih dari daftar..."
-                            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                        <input type="text" name="ruangan_usulan" x-model="proposedRoom" @input.debounce.500ms="checkAvailability()" required
+                            list="roomSuggestions" placeholder="Ketik nama ruangan atau pilih dari daftar..."
+                            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500">
                         <datalist id="roomSuggestions">
                             @foreach($rooms as $r)
                             <option value="{{ $r->name }}">{{ $r->name }} ({{ $r->type }}, kap. {{ $r->capacity ?? '-' }})</option>
                             @endforeach
                         </datalist>
+                        <div x-show="proposedRoom" class="mt-2 text-xs font-semibold text-indigo-600 flex items-center gap-1">
+                            <span>🔍 Memeriksa ketersediaan <span x-text="proposedRoom" class="font-bold underline"></span> secara real-time...</span>
+                        </div>
                     </div>
+                </div>
 
+                <!-- Second Row: Jam Mulai, Jam Selesai, Mode Pengajaran -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Jam Mulai *</label>
+                        <input type="time" name="waktu_mulai_usulan_time" x-model="proposedStart" @change="checkAvailability()" required
+                            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Jam Selesai *</label>
+                        <input type="time" name="waktu_selesai_usulan_time" x-model="proposedEnd" @change="checkAvailability()" required
+                            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500">
+                    </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Mode Pengajaran *</label>
-                        <select name="is_online" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                        <select name="is_online" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500">
                             <option value="0">Tatap Muka (Offline)</option>
                             <option value="1">Online</option>
                         </select>
                     </div>
+                </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Alasan Pergantian *</label>
-                        <textarea name="alasan" required rows="3"
-                            placeholder="Jelaskan alasan pemindahan jadwal secara singkat..."
-                            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                {{-- Availability status box --}}
+                <div x-show="proposedDate" x-transition class="mt-4 p-5 rounded-2xl border transition-all" :class="statusColor">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 mt-0.5 text-xl" x-text="statusIcon"></div>
+                        <div class="ml-3 w-full">
+                            <h3 class="text-sm font-extrabold uppercase tracking-wide" :class="statusTextColor" x-text="statusTitle"></h3>
+                            <div class="mt-1 text-sm font-medium" :class="statusTextColor" x-html="statusMessage"></div>
+                            
+                            <div class="mt-3 pt-3 border-t border-current/10 flex flex-wrap gap-2 items-center text-xs" :class="statusTextColor">
+                                <span class="font-bold uppercase tracking-wider opacity-75">Detail Verifikasi:</span>
+                                <span class="bg-black/5 px-2.5 py-1 rounded-md font-bold" x-text="proposedDate"></span>
+                                <span class="bg-black/5 px-2.5 py-1 rounded-md font-bold" x-text="proposedStart + ' - ' + proposedEnd"></span>
+                                <span class="bg-black/5 px-2.5 py-1 rounded-md font-black" x-text="'Ruang: ' + (proposedRoom || 'Belum diisi') + (proposedRoomType ? ' (' + proposedRoomType + ')' : '')"></span>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            {{-- Alasan --}}
+            <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/60 p-6">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">3 — Alasan Pergantian</h3>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Alasan Pergantian *</label>
+                    <textarea name="alasan" required rows="3"
+                        placeholder="Jelaskan alasan pemindahan jadwal secara singkat..."
+                        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
                 </div>
             </div>
 
@@ -184,12 +280,23 @@ function requestForm() {
         proposedDate: '{{ $prefilledTime ? $prefilledTime->format("Y-m-d") : "" }}',
         proposedStart: '{{ $prefilledTime ? $prefilledTime->format("H:i") : "07:30" }}',
         proposedEnd: '{{ $prefilledTime ? $prefilledTime->copy()->addHours(2)->format("H:i") : "09:40" }}',
-        proposedRoom: '',
+        proposedRoom: '{{ $prefilledRoom ?? "" }}',
+        proposedRoomType: '',
         isBlocked: false,
         statusTitle: 'Pilih tanggal untuk cek ketersediaan',
+        statusMessage: 'Masukkan tanggal, jam, dan ruangan usulan untuk memeriksa ketersediaan sistem.',
         statusColor: 'bg-gray-50 border-gray-200',
         statusTextColor: 'text-gray-600',
-        statusIcon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>',
+        statusIcon: '📅',
+
+        // ── Mahasiswa NIM lookup ─────────────────────────────────
+        studentNim: '',
+        studentNama: '',
+        studentEmail: '',
+        studentInfo: null,
+        studentJadwals: [],
+        nimLoading: false,
+        nimNotFound: false,
 
         init() {
             if (this.proposedDate) this.checkAvailability();
@@ -202,36 +309,116 @@ function requestForm() {
             this.originalDetails = opt.getAttribute('data-details') || '';
         },
 
+        async lookupMahasiswa() {
+            const nim = this.studentNim.trim();
+            if (nim.length < 5) {
+                this.studentInfo = null;
+                this.studentJadwals = [];
+                this.nimNotFound = false;
+                return;
+            }
+            this.nimLoading = true;
+            this.nimNotFound = false;
+            try {
+                const res = await fetch(`/api/mahasiswa/${encodeURIComponent(nim)}/jadwal`);
+                if (res.status === 404) {
+                    this.studentInfo = null;
+                    this.studentJadwals = [];
+                    this.nimNotFound = true;
+                } else {
+                    const data = await res.json();
+                    this.studentInfo = data.mahasiswa;
+                    this.studentJadwals = data.jadwals;
+                    this.nimNotFound = false;
+                    // Auto-fill nama dan email jika kosong
+                    if (!this.studentNama && data.mahasiswa.nama) this.studentNama = data.mahasiswa.nama;
+                    if (!this.studentEmail && data.mahasiswa.email) this.studentEmail = data.mahasiswa.email;
+                }
+            } catch(e) {
+                console.error('Lookup NIM error:', e);
+            } finally {
+                this.nimLoading = false;
+            }
+        },
+
         async checkAvailability() {
-            if (!this.proposedDate) return;
+            if (!this.proposedDate || !this.proposedStart || !this.proposedEnd) return;
             const dateObj = new Date(this.proposedDate);
             if (dateObj.getDay() === 0) {
                 this.isBlocked = true;
                 this.statusTitle = 'Hari Minggu tidak diizinkan';
+                this.statusMessage = 'Pengajuan pergantian jadwal hanya diperbolehkan untuk hari kerja (Senin - Sabtu).';
                 this.statusColor = 'bg-red-50 border-red-200';
                 this.statusTextColor = 'text-red-700';
+                this.statusIcon = '❌';
+                this.proposedRoomType = '';
                 return;
             }
 
             try {
-                const res = await fetch(`/api/availability?date=${this.proposedDate}&dosen_id={{ $dosen->id }}&room=${encodeURIComponent(this.proposedRoom)}`);
+                const res = await fetch(`/api/availability?date=${this.proposedDate}&start_time=${this.proposedStart}&end_time=${this.proposedEnd}&dosen_id={{ $dosen->id }}&room=${encodeURIComponent(this.proposedRoom)}`);
                 const data = await res.json();
 
-                if (data.schedules && data.schedules.length > 0) {
-                    this.isBlocked = false;
-                    this.statusTitle = 'Ada jadwal lain di hari ini — pastikan jam tidak bertabrakan';
-                    this.statusColor = 'bg-yellow-50 border-yellow-200';
-                    this.statusTextColor = 'text-yellow-800';
-                } else if (data.room_conflicts && data.room_conflicts.length > 0) {
-                    this.isBlocked = false;
-                    this.statusTitle = 'Ruangan sudah digunakan pengajuan lain di hari ini';
+                this.proposedRoomType = data.room_details ? data.room_details.type : '';
+
+                if (data.dosen_schedule_conflict) {
+                    this.isBlocked = true;
+                    this.statusTitle = '⚠️ Dosen memiliki jadwal mengajar reguler lain!';
+                    this.statusMessage = 'Dosen yang bersangkutan sudah memiliki jadwal mengajar reguler lain pada jam terpilih.';
+                    this.statusColor = 'bg-red-50 border-red-200';
+                    this.statusTextColor = 'text-red-700';
+                    this.statusIcon = '❌';
+                } else if (data.dosen_request_conflict) {
+                    this.isBlocked = true;
+                    this.statusTitle = '⚠️ Dosen memiliki permohonan pengganti lain!';
+                    this.statusMessage = 'Dosen yang bersangkutan memiliki permohonan pengganti lain yang sedang diproses atau disetujui pada jam terpilih.';
+                    this.statusColor = 'bg-red-50 border-red-200';
+                    this.statusTextColor = 'text-red-700';
+                    this.statusIcon = '❌';
+                } else if (data.room_conflict) {
+                    this.isBlocked = true;
+                    this.statusTitle = `❌ Ruangan bentrok!`;
+                    this.statusMessage = `Ruangan <strong>${this.proposedRoom}</strong> terpakai oleh: <strong>${data.room_conflict.dosen}</strong> (${data.room_conflict.mata_kuliah} - ${data.room_conflict.kelas}) pada jam ${data.room_conflict.waktu}.`;
                     this.statusColor = 'bg-orange-50 border-orange-200';
                     this.statusTextColor = 'text-orange-800';
+                    this.statusIcon = '🔒';
                 } else {
+                    // Cek bentrok jadwal mahasiswa jika mode mahasiswa
+                    if (this.pengajuType === 'mahasiswa' && this.studentJadwals && this.studentJadwals.length > 0) {
+                        const start = new Date(`${this.proposedDate}T${this.proposedStart}`);
+                        const end   = new Date(`${this.proposedDate}T${this.proposedEnd}`);
+                        const conflict = this.studentJadwals.find(j => {
+                            const jStart = new Date(j.waktu_mulai);
+                            const jEnd   = new Date(j.waktu_selesai);
+                            return start < jEnd && end > jStart;
+                        });
+                        if (conflict) {
+                            if (this.studentInfo && this.studentInfo.status_mengulang) {
+                                // Pengulang: warning tapi boleh lanjut
+                                this.isBlocked = false;
+                                this.statusTitle = '⚠️ Potensi bentrok jadwal pengulang';
+                                this.statusMessage = `Waktu ini bertabrakan dengan jadwal reguler Anda: <strong>${conflict.mata_kuliah}</strong> (${conflict.hari}, ${conflict.jam}). Karena status Anda MENGULANG, sistem tetap mengizinkan pengajuan — AI akan menghitung solusi terbaik.`;
+                                this.statusColor = 'bg-amber-50 border-amber-200';
+                                this.statusTextColor = 'text-amber-800';
+                                this.statusIcon = '🤖';
+                            } else {
+                                // Reguler: blokir
+                                this.isBlocked = true;
+                                this.statusTitle = '❌ Bentrok dengan jadwal kuliah Anda!';
+                                this.statusMessage = `Waktu ini bertabrakan dengan mata kuliah Anda: <strong>${conflict.mata_kuliah}</strong> bersama <strong>${conflict.dosen_nama}</strong> di ${conflict.ruangan} (${conflict.hari}, ${conflict.jam}).`;
+                                this.statusColor = 'bg-red-50 border-red-200';
+                                this.statusTextColor = 'text-red-700';
+                                this.statusIcon = '❌';
+                            }
+                            return;
+                        }
+                    }
                     this.isBlocked = false;
                     this.statusTitle = '✓ Jadwal dan ruangan tersedia';
+                    this.statusMessage = `Jadwal usulan dan ruangan <strong>${this.proposedRoom || 'yang dipilih'}</strong> aman dan dapat digunakan untuk pergantian jadwal.`;
                     this.statusColor = 'bg-green-50 border-green-200';
                     this.statusTextColor = 'text-green-700';
+                    this.statusIcon = '✅';
                 }
             } catch(e) {
                 console.error(e);

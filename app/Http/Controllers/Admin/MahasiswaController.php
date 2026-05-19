@@ -35,7 +35,8 @@ class MahasiswaController extends Controller
 
     public function create()
     {
-        return view('admin.mahasiswa.create');
+        $prodis = Prodi::orderBy('name')->get();
+        return view('admin.mahasiswa.create', compact('prodis'));
     }
 
     public function store(Request $request)
@@ -47,7 +48,8 @@ class MahasiswaController extends Controller
     public function edit($id)
     {
         $mahasiswa = Mahasiswa::findOrFail($id);
-        return view('admin.mahasiswa.edit', compact('mahasiswa'));
+        $prodis = Prodi::orderBy('name')->get();
+        return view('admin.mahasiswa.edit', compact('mahasiswa', 'prodis'));
     }
 
     public function update(Request $request, $id)
@@ -93,6 +95,7 @@ class MahasiswaController extends Controller
             $email = $row[2];
             $prodiName = $row[3] ?? 'Umum';
             $kelas = $row[4] ?? '1IF';
+            $statusMengulang = isset($row[5]) ? filter_var($row[5], FILTER_VALIDATE_BOOLEAN) : false;
 
             $prodi = Prodi::firstOrCreate(['name' => $prodiName]);
 
@@ -102,7 +105,8 @@ class MahasiswaController extends Controller
                     'nama' => $name,
                     'email' => $email,
                     'prodi_id' => $prodi->id,
-                    'kelas' => $kelas
+                    'kelas' => $kelas,
+                    'status_mengulang' => $statusMengulang
                 ]
             );
             $importedCount++;
@@ -145,11 +149,11 @@ class MahasiswaController extends Controller
             $file = fopen('php://output', 'w');
             
             // Header
-            fputcsv($file, ['nama', 'nim', 'email', 'prodi_name', 'kelas'], ';');
+            fputcsv($file, ['nama', 'nim', 'email', 'prodi_name', 'kelas', 'status_mengulang'], ';');
             
             // Rows
             foreach ($mahasiswas as $m) {
-                fputcsv($file, [$m->nama, $m->nim, $m->email, optional($m->prodi)->name ?? '', $m->kelas ?? ''], ';');
+                fputcsv($file, [$m->nama, $m->nim, $m->email, optional($m->prodi)->name ?? '', $m->kelas ?? '', $m->status_mengulang ? '1' : '0'], ';');
             }
             
             fclose($file);

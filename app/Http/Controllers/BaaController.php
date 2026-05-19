@@ -241,4 +241,121 @@ class BaaController extends Controller
 
         return back()->with('success', 'Honor dosen berhasil diperbarui.');
     }
+
+    // ── Rekap Presensi Mahasiswa ────────────────────────────────────────────
+
+    /**
+     * Halaman rekap presensi mahasiswa: daftar mahasiswa beserta
+     * mata kuliah, dosen, jam, dan ruangan yang mereka ikuti.
+     */
+    public function rekapMahasiswa(Request $request)
+    {
+        $search  = $request->get('search');
+        $periode = $request->get('periode');
+        $prodiId = $request->get('prodi_id');
+
+        $periodes = \App\Models\Periode::orderBy('name', 'desc')->pluck('name');
+        $prodis   = \App\Models\Prodi::orderBy('name')->get();
+
+        $query = \App\Models\Mahasiswa::with(['prodi'])->orderBy('nama');
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('nim',  'like', "%{$search}%")
+                  ->orWhere('kelas','like', "%{$search}%");
+            });
+        }
+        if ($prodiId) $query->where('prodi_id', $prodiId);
+
+        $mahasiswas = $query->paginate(20)->withQueryString();
+
+        // Untuk setiap mahasiswa, ambil jadwalnya (via pivot atau kelas)
+        $mahasiswas->each(function ($mhs) use ($periode) {
+            $mhs->jadwal_list = \App\Models\Schedule::where('kelas', $mhs->kelas)
+                ->when($periode, fn($q) => $q->where('periode', $periode))
+                ->with(['dosen', 'room'])
+                ->orderBy('waktu_mulai')
+                ->get()
+                ->map(function ($s) {
+                    return [
+                        'id'           => $s->id,
+                        'mata_kuliah'  => $s->mata_kuliah,
+                        'dosen_nama'   => $s->dosen->name ?? '-',
+                        'hari'         => \Carbon\Carbon::parse($s->waktu_mulai)->isoFormat('dddd'),
+                        'jam'          => \Carbon\Carbon::parse($s->waktu_mulai)->format('H:i')
+                                        . ' - ' . \Carbon\Carbon::parse($s->waktu_selesai)->format('H:i'),
+                        'ruangan'      => $s->room->name ?? '-',
+                        'ruangan_tipe' => $s->room->type ?? '-',
+                        'pertemuan'    => $s->pertemuan,
+                        'status'       => $s->status,
+                        'periode'      => $s->periode,
+                    ];
+                });
+        });
+
+        return view('baa.rekap_mahasiswa', compact(
+            'mahasiswas', 'periodes', 'prodis', 'search', 'periode', 'prodiId'
+        ));
+    }
+
+    /**
+     * Export rekap mahasiswa ke CSV.
+     */
+    public function exportRekapMahasiswa(Request $request)
+    {
+        $periode = $request->get('periode');
+        $prodiId = $request->get('prodi_id');
+
+        $mahasiswas = \App\Models\Mahasiswa::with('prodi')
+            ->when($prodiId, fn($q) => $q->where('prodi_id', $prodiId))
+            ->orderBy('nama')
+            ->get();
+
+        $headers = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="rekap_mahasiswa_' . ($periode ?? 'semua') . '_' . now()->format('Ymd_His') . '.csv"',
+        ];
+
+        $callback = function () use ($mahasiswas, $periode) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['NIM', 'Nama', 'Kelas', 'Program Studi', 'Status', 'Mata Kuliah', 'Dosen', 'Hari', 'Jam', 'Ruangan', 'Periode', 'Status Jadwal'], ';');
+
+            foreach ($mahasiswas as $mhs) {
+                $jadwals = \App\Models\Schedule::where('kelas', $mhs->kelas)
+                    ->when($periode, fn($q) => $q->where('periode', $periode))
+                    ->with(['dosen', 'room'])
+                    ->orderBy('waktu_mulai')
+                    ->get();
+
+                if ($jadwals->isEmpty()) {
+                    fputcsv($file, [
+                        $mhs->nim, $mhs->nama, $mhs->kelas,
+                        $mhs->prodi->name ?? '-',
+                        $mhs->status_mengulang ? 'MENGULANG' : 'REGULER',
+                        '-', '-', '-', '-', '-', '-', '-',
+                    ], ';');
+                } else {
+                    foreach ($jadwals as $s) {
+                        fputcsv($file, [
+                            $mhs->nim,
+                            $mhs->nama,
+                            $mhs->kelas,
+                            $mhs->prodi->name ?? '-',
+                            $mhs->status_mengulang ? 'MENGULANG' : 'REGULER',
+                            $s->mata_kuliah,
+                            $s->dosen->name ?? '-',
+                            \Carbon\Carbon::parse($s->waktu_mulai)->isoFormat('dddd'),
+                            \Carbon\Carbon::parse($s->waktu_mulai)->format('H:i') . ' - ' . \Carbon\Carbon::parse($s->waktu_selesai)->format('H:i'),
+                            $s->room->name ?? '-',
+                            $s->periode ?? '-',
+                            $s->status,
+                        ], ';');
+                    }
+                }
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

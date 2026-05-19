@@ -37,7 +37,10 @@
                         <tbody class="divide-y divide-gray-100">
                             @foreach($approvedRequests as $req)
                             <tr class="hover:bg-gray-50">
-                                <td class="py-4 px-6 font-bold text-gray-900">{{ $req->room->name ?? $req->ruangan_usulan ?? '-' }} <span class="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-md ml-1">PENGGANTI</span></td>
+                                <td class="py-4 px-6 font-bold text-gray-900">{{ $req->room->name ?? $req->ruangan_usulan ?? '-' }} 
+                                     <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md ml-1 {{ $req->status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-indigo-100 text-indigo-700' }}">
+                                         PENGGANTI ({{ strtoupper($req->status) }})
+                                     </span></td>
                                 <td class="py-4 px-6 font-medium text-gray-700">
                                     {{ \Carbon\Carbon::parse($req->waktu_mulai_usulan)->format('H:i') }} - 
                                     {{ \Carbon\Carbon::parse($req->waktu_selesai_usulan)->format('H:i') }}

@@ -11,6 +11,9 @@
              activeRequest: null,
              showModal: false,
              isSuccess: false,
+             showDateClickModal: false,
+             clickedDateStr: '',
+             clickedDateRaw: '',
              openRequest(req, isSuccess = false) {
                  this.activeRequest = req;
                  this.isSuccess = isSuccess;
@@ -25,6 +28,7 @@
                  window.print();
              }
          }"
+         @date-selected.window="clickedDateRaw = $event.detail.raw; clickedDateStr = $event.detail.formatted; showDateClickModal = true"
          x-init="
              @if($successRequest)
                  openRequest({
@@ -56,7 +60,7 @@
                     Sistem pemantauan kalender mengajar dan pengajuan jadwal pengganti secara *real-time*.
                 </p>
                 <div class="mt-6 flex flex-wrap justify-center gap-4 relative z-20">
-                    <a href="{{ route('public.cari_jadwal_kosong') }}" class="inline-flex items-center px-6 py-2.5 bg-indigo-100 text-indigo-700 font-bold rounded-full hover:bg-indigo-200 transition-colors shadow-sm">
+                    <a href="{{ route('public.cari_jadwal_kosong', ['dosen_id' => $selectedDosenId]) }}" class="inline-flex items-center px-6 py-2.5 bg-indigo-100 text-indigo-700 font-bold rounded-full hover:bg-indigo-200 transition-colors shadow-sm">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         Cari Jadwal Ruangan Kosong
                     </a>
@@ -140,56 +144,24 @@
                             </div>
                         </div>
 
-                        <!-- Search Dosen -->
+                        <!-- Search Dosen (Select Dropdown) -->
                         <div class="w-full md:w-[35%] relative">
-                            <label class="block text-sm font-bold text-gray-700 mb-3 tracking-wide">PENCARIAN DOSEN</label>
-                            
+                            <label class="block text-sm font-bold text-gray-700 mb-3 tracking-wide">PILIH DOSEN</label>
                             <div class="relative">
                                 <input type="hidden" name="dosen_id" :value="selectedId">
-                                <button type="button" @click="open = !open" @click.away="open = false" 
-                                        class="relative w-full bg-white/80 border border-gray-200/80 rounded-2xl shadow-sm pl-5 pr-12 py-4 text-left cursor-default focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 hover:bg-white hover:shadow-md">
-                                    <div class="flex items-center">
-                                        <div class="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold mr-3 shadow-inner">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                                        </div>
-                                        <span class="block truncate text-gray-800 font-semibold text-base" x-text="selectedName"></span>
-                                    </div>
-                                    <span class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                                        <svg class="h-6 w-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </span>
-                                </button>
-
-                                <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute z-50 mt-2 w-full bg-white/95 backdrop-blur-xl shadow-2xl max-h-72 rounded-2xl border border-gray-100 overflow-hidden" style="display: none;">
-                                    <div class="sticky top-0 bg-white/90 backdrop-blur-sm px-4 py-3 border-b border-gray-100">
-                                        <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
-                                            </div>
-                                            <input type="text" x-model="search" placeholder="Ketik nama dosen..." class="w-full pl-10 border-none bg-gray-50 rounded-xl py-2.5 text-sm focus:ring-0 focus:bg-gray-100 transition-colors">
-                                        </div>
-                                    </div>
-                                    <ul class="pt-2 pb-2 overflow-y-auto max-h-56">
-                                        @foreach($dosens as $dosen)
-                                        <li x-show="(selectedProdi === '' || {{ $dosen->taught_prodi_ids->toJson() }}.some(id => id == selectedProdi)) && (search === '' || '{{ strtolower($dosen->name) }}'.includes(search.toLowerCase()))" 
-                                            @click="selectedId = '{{ $dosen->id }}'; selectedName = '{{ addslashes($dosen->name) }}'; open = false;"
-                                            class="cursor-pointer select-none relative py-3 pl-4 pr-9 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-white text-gray-900 transition-colors border-b border-gray-50 last:border-0">
-                                            <div class="flex items-center">
-                                                <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs mr-3">
-                                                    {{ substr($dosen->name, 0, 2) }}
-                                                </div>
-                                                <div>
-                                                    <span class="font-semibold block truncate" :class="selectedId === '{{ $dosen->id }}' ? 'text-indigo-600' : 'text-gray-700'">{{ $dosen->name }}</span>
-                                                    <span class="text-xs text-gray-400">
-                                                        @php
-                                                            $taughtProdis = \App\Models\Prodi::whereIn('id', $dosen->taught_prodi_ids)->pluck('name')->toArray();
-                                                        @endphp
-                                                        {{ implode(', ', $taughtProdis) }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                        @endforeach
-                                    </ul>
+                                <select @change="selectedId = $event.target.value; selectedName = $event.target.options[$event.target.selectedIndex].text" 
+                                        class="appearance-none w-full bg-white/80 border border-gray-200/80 rounded-2xl shadow-sm pl-5 pr-10 py-4 text-base font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all hover:bg-white cursor-pointer">
+                                    <option value="">Pilih Nama Dosen...</option>
+                                    @foreach($dosens as $dosen)
+                                        <option value="{{ $dosen->id }}" 
+                                                x-show="selectedProdi === '' || {{ $dosen->taught_prodi_ids->toJson() }}.some(id => id == selectedProdi)"
+                                                :selected="selectedId == '{{ $dosen->id }}'">
+                                            {{ $dosen->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-indigo-400">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
                             </div>
                         </div>
@@ -396,10 +368,11 @@
           nowIndicator: true,
           selectable: true,
           dateClick: function(info) {
-              if (confirm('Waktu ini (' + info.dateStr + ') kosong. Apakah Anda ingin mengajukan jadwal pengganti di jam ini?\n\nSilakan pilih jadwal yang ingin Anda pindahkan di halaman berikutnya.')) {
-                  // Redirect to a general request page with pre-filled date/time
-                  window.location.href = '/schedules/request/new?date=' + encodeURIComponent(info.dateStr) + '&dosen_id={{ $selectedDosenId }}';
-              }
+              let dateObj = new Date(info.dateStr);
+              let options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+              let formattedDate = dateObj.toLocaleDateString('id-ID', options);
+              
+              window.dispatchEvent(new CustomEvent('date-selected', { detail: { raw: info.dateStr, formatted: formattedDate } }));
           },
           events: eventsData,
           eventClick: function(info) {
@@ -417,7 +390,9 @@
             let innerHtml = `
                 <div class="h-full w-full flex flex-col justify-center px-2 shadow-sm rounded-md" style="background: linear-gradient(135deg, ${arg.event.backgroundColor}cc, ${arg.event.backgroundColor});">
                     <div class="font-bold text-[11px] leading-tight text-white mb-1 drop-shadow-sm">${arg.event.title}</div>
-                    <div class="text-[10px] text-white/90 font-medium">Pert: ${arg.event.extendedProps.pertemuan}</div>
+                    <div class="text-[10px] text-white/90 font-medium mt-0.5">
+                        Pert: ${arg.event.extendedProps.pertemuan}
+                    </div>
                 </div>
             `;
             let italicEl = document.createElement('div');
@@ -569,6 +544,49 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Beautiful Custom Confirm Modal for Date Click empty slot -->
+            <div x-show="showDateClickModal" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md"
+                 style="display: none;">
+                
+                <div class="bg-white rounded-[2rem] shadow-2xl border border-white/50 max-w-md w-full overflow-hidden transform transition-all relative p-8">
+                    <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                    
+                    <div class="text-center mb-6">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-50 text-indigo-600 mb-4 shadow-inner">
+                            <svg class="h-8 w-8 text-indigo-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-black text-gray-800 tracking-tight">Ajukan Jadwal Pengganti?</h3>
+                        <p class="text-sm text-gray-500 mt-2">
+                            Waktu ini terdeteksi <span class="text-green-600 font-bold">KOSONG</span>. Apakah Anda ingin mengajukan jadwal pengganti di waktu ini?
+                        </p>
+                    </div>
+                    
+                    <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 mb-6">
+                        <p class="text-xs text-indigo-700 font-bold uppercase tracking-wider mb-1">Pilihan Waktu:</p>
+                        <p class="text-base text-gray-800 font-bold" x-text="clickedDateStr"></p>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button type="button" @click="showDateClickModal = false" 
+                                class="w-full sm:w-1/2 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition duration-150 text-center">
+                            Batal
+                        </button>
+                        <a :href="'/schedules/request/new?date=' + encodeURIComponent(clickedDateRaw) + '&dosen_id={{ $selectedDosenId }}'"
+                           class="w-full sm:w-1/2 py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-2xl transition duration-150 text-center shadow-lg hover:shadow-indigo-500/20">
+                            Ya, Ajukan!
+                        </a>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 

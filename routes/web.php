@@ -18,6 +18,7 @@ Route::get('/cari-jadwal-kosong', [\App\Http\Controllers\PublicController::class
 Route::get('/api/schedules', [ScheduleController::class, 'apiSchedules'])->name('api.schedules');
 Route::get('/api/availability', [ScheduleController::class, 'checkAvailability'])->name('api.availability');
 Route::get('/api/rooms', [ScheduleController::class, 'apiRooms'])->name('api.rooms');
+Route::get('/api/mahasiswa/{nim}/jadwal', [ScheduleController::class, 'apiMahasiswaJadwal'])->name('api.mahasiswa.jadwal');
 
 // Public Request Pages (no login needed)
 Route::get('/schedules/request/new', [ScheduleController::class, 'requestGeneral'])->name('schedules.request_new');
@@ -54,6 +55,9 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/baa/rooms/{room}', [BaaController::class, 'updateRoom'])->name('baa.rooms.update');
     Route::delete('/baa/rooms/{room}', [BaaController::class, 'destroyRoom'])->name('baa.rooms.destroy');
     Route::post('/baa/dosen/honor', [BaaController::class, 'updateDosenHonor'])->name('baa.dosen.honor');
+    // Rekap Presensi Mahasiswa
+    Route::get('/baa/rekap-mahasiswa', [BaaController::class, 'rekapMahasiswa'])->name('baa.rekap_mahasiswa');
+    Route::get('/baa/rekap-mahasiswa/export', [BaaController::class, 'exportRekapMahasiswa'])->name('baa.rekap_mahasiswa.export');
 
     // Periode management (BAA)
     Route::get('/baa/periodes', [\App\Http\Controllers\Baa\PeriodeController::class, 'index'])->name('baa.periodes.index');

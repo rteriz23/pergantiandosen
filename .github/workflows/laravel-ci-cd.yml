@@ -68,23 +68,62 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-    # OPTION 1: SSH Deployment (Recommended for VPS like DigitalOcean, Linode, AWS)
-    # This step logs into your server and runs your deploy.sh script.
-    # To enable: Create GITHUB SECRETS in your repo: SSH_HOST, SSH_USERNAME, SSH_KEY, and SSH_PORT (optional)
+    # ─── Cek apakah SSH secrets sudah dikonfigurasi ───────────────────────────
+    - name: Check Deployment Configuration
+      id: check-secrets
+      run: |
+        if [ -z "${{ secrets.SSH_HOST }}" ] && [ -z "${{ secrets.DEPLOY_WEBHOOK_URL }}" ]; then
+          echo "configured=false" >> $GITHUB_OUTPUT
+          echo "::warning::⚠️  Deployment SKIPPED: Belum ada server yang dikonfigurasi."
+          echo "::warning::   Untuk VPS: Tambahkan secret SSH_HOST, SSH_USERNAME, SSH_KEY"
+          echo "::warning::   Untuk Shared Hosting: Tambahkan secret DEPLOY_WEBHOOK_URL, DEPLOY_TOKEN"
+        else
+          echo "configured=true" >> $GITHUB_OUTPUT
+        fi
+
+    # ─── OPSI 1: SSH Deployment untuk VPS ─────────────────────────────────────
+    # Aktifkan dengan menambahkan GitHub Secrets: SSH_HOST, SSH_USERNAME, SSH_KEY
+    # SSH_PORT opsional (default: 22)
     - name: Deploy to VPS via SSH
-      uses: appleboy/ssh-action@v0.1.10
+      if: steps.check-secrets.outputs.configured == 'true' && secrets.SSH_HOST != ''
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
-        port: ${{ secrets.SSH_PORT || '22' }}
+        port: ${{ secrets.SSH_PORT || 22 }}
         script: |
           cd /var/www/pergantiandosen
           bash deploy.sh
 
-    # OPTION 2: Webhook Deployment (Alternative for Shared Hosting / cPanel)
-    # This step pings a secure Laravel route which triggers automatic 'git pull' on the server.
-    # To enable: Uncomment the lines below and set DEPLOY_WEBHOOK_URL and DEPLOY_TOKEN in GitHub Secrets.
+    # ─── OPSI 2: Webhook Deployment untuk Shared Hosting / cPanel ─────────────
+    # Aktifkan dengan menambahkan GitHub Secrets: DEPLOY_WEBHOOK_URL, DEPLOY_TOKEN
     # - name: Trigger Webhook Deployment
+    #   if: steps.check-secrets.outputs.configured == 'true' && secrets.DEPLOY_WEBHOOK_URL != ''
     #   run: |
-    #     curl -X POST -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" ${{ secrets.DEPLOY_WEBHOOK_URL }}
+    #     curl -X POST \
+    #       -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+    #       -H "Content-Type: application/json" \
+    #       --fail \
+    #       ${{ secrets.DEPLOY_WEBHOOK_URL }}
+
+    # ─── Info jika deployment belum dikonfigurasi ──────────────────────────────
+    - name: Deployment Not Configured (Info)
+      if: steps.check-secrets.outputs.configured == 'false'
+      run: |
+        echo "=========================================="
+        echo "  ✅ CI (Build & Test) BERHASIL!"
+        echo "  ℹ️  Deployment belum dikonfigurasi."
+        echo ""
+        echo "  Pilih salah satu cara deploy:"
+        echo "  A) VPS/SSH → Tambahkan secret:"
+        echo "     - SSH_HOST     : IP address server"
+        echo "     - SSH_USERNAME : username login"
+        echo "     - SSH_KEY      : private key SSH"
+        echo "     - SSH_PORT     : (opsional, default 22)"
+        echo ""
+        echo "  B) Shared Hosting → Tambahkan secret:"
+        echo "     - DEPLOY_WEBHOOK_URL : URL endpoint webhook"
+        echo "     - DEPLOY_TOKEN       : token rahasia"
+        echo "=========================================="
+

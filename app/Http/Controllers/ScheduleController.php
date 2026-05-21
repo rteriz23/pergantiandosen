@@ -44,12 +44,12 @@ class ScheduleController extends Controller
         if ($selectedDosenId) {
             $historyRequests = ScheduleRequest::whereHas('schedule', function ($q) use ($selectedDosenId) {
                 $q->where('user_id', $selectedDosenId);
-            })->with(['schedule', 'room'])->orderBy('created_at', 'desc')->get();
+            })->with(['schedule.dosen', 'room', 'dosenPengganti'])->orderBy('created_at', 'desc')->get();
         }
 
         $successRequest = null;
         if (session('success_request_id')) {
-            $successRequest = ScheduleRequest::with(['schedule.dosen', 'pengaju', 'room'])
+            $successRequest = ScheduleRequest::with(['schedule.dosen', 'pengaju', 'room', 'dosenPengganti'])
                 ->find(session('success_request_id'));
         }
 
@@ -65,32 +65,68 @@ class ScheduleController extends Controller
     {
         $dosenId = $request->get('dosen_id');
         $periode = $request->get('periode');
+        $roomFilter = $request->get('room');
 
         if (!$dosenId) return response()->json([]);
 
-        $query = Schedule::with('room')->where('user_id', $dosenId);
+        $query = Schedule::with(['room', 'dosen', 'prodi'])->where('user_id', $dosenId);
         if ($periode) $query->where('periode', $periode);
+        if ($roomFilter) {
+            $query->whereHas('room', fn($q) => $q->where('name', $roomFilter));
+        }
 
-        $schedules = $query->get();
+        $schedules = $query->orderBy('waktu_mulai')->get();
         $events = [];
         foreach ($schedules as $s) {
-            $pendingReq = ScheduleRequest::where('schedule_id', $s->id)->where('status', 'Pending')->first();
-            $color = '#3b82f6';
-            if ($pendingReq)          $color = '#eab308';
-            elseif ($s->status == 'Diganti') $color = '#22c55e';
+            $pendingReq = ScheduleRequest::where('schedule_id', $s->id)
+                ->where('status', 'Pending')
+                ->with('schedule')
+                ->first();
 
-            $roomName = $s->room ? $s->room->name : 'N/A';
+            $slaBreached = false;
+            if ($pendingReq && $pendingReq->sla_deadline && now()->gt($pendingReq->sla_deadline)) {
+                $slaBreached = true;
+            }
+
+            $color = '#3b82f6';  // blue = reguler
+            if ($slaBreached)              $color = '#f87171';  // red = SLA breach
+            elseif ($pendingReq)           $color = '#eab308';  // yellow = pending
+            elseif ($s->status == 'Diganti') $color = '#22c55e'; // green = diganti
+
+            $room     = $s->room;
+            $roomName = $room ? $room->name : ($s->ruangan_usulan ?? 'Belum ada ruangan');
+            $roomType = $room ? $room->type : '-';
+            $roomCap  = $room ? ($room->capacity ?? '-') : '-';
+
+            // Build rich title for calendar block
+            $blockTitle = $s->mata_kuliah . ' (' . $s->kelas . ')';
+
             $events[] = [
                 'id'    => $s->id,
-                'title' => $s->mata_kuliah . ' (' . $s->kelas . ')',
+                'title' => $blockTitle,
                 'start' => $s->waktu_mulai,
                 'end'   => $s->waktu_selesai,
                 'color' => $color,
                 'extendedProps' => [
-                    'status'              => $s->status,
+                    'mata_kuliah'         => $s->mata_kuliah,
+                    'kelas'               => $s->kelas,
                     'pertemuan'           => $s->pertemuan,
+                    'dosen_nama'          => $s->dosen->name ?? '-',
+                    'prodi'               => $s->prodi->name ?? '-',
+                    'periode'             => $s->periode ?? '-',
+                    'status'              => $s->status,
                     'has_pending_request' => $pendingReq ? true : false,
+                    'sla_breached'        => $slaBreached,
                     'room'                => $roomName,
+                    'room_id'             => $room ? $room->id : null,
+                    'room_type'           => $roomType,
+                    'room_capacity'       => $roomCap,
+                    'pending_request_id'  => $pendingReq ? $pendingReq->id : null,
+                    'pengaju_nama'        => $pendingReq ? ($pendingReq->pengaju_nama ?? '-') : null,
+                    'pengaju_nim'         => $pendingReq ? ($pendingReq->pengaju_nim_nidn ?? '-') : null,
+                    'pengaju_type'        => $pendingReq ? $pendingReq->pengaju_type : null,
+                    'waktu_usulan'        => $pendingReq ? (Carbon::parse($pendingReq->waktu_mulai_usulan)->format('d M Y H:i') . ' — ' . Carbon::parse($pendingReq->waktu_selesai_usulan)->format('H:i')) : null,
+                    'ruangan_usulan'      => $pendingReq ? $pendingReq->ruangan_usulan : null,
                 ],
             ];
         }
@@ -105,11 +141,13 @@ class ScheduleController extends Controller
 
     public function checkAvailability(Request $request)
     {
-        $date      = $request->get('date');
-        $startTime = $request->get('start_time', '07:30');
-        $endTime   = $request->get('end_time', '09:40');
-        $dosenId   = $request->get('dosen_id');
-        $roomName  = $request->get('room');
+        $date               = $request->get('date');
+        $startTime          = $request->get('start_time', '07:30');
+        $endTime            = $request->get('end_time', '09:40');
+        $dosenId            = $request->get('dosen_id');
+        $dosenPenggantiId   = $request->get('dosen_pengganti_id');
+        $roomName           = $request->get('room');
+        $scheduleId         = $request->get('schedule_id');
 
         if (!$dosenId || !$date) {
             return response()->json(['error' => 'dosen_id and date are required'], 400);
@@ -119,41 +157,55 @@ class ScheduleController extends Controller
         $proposedEnd   = Carbon::parse($date . ' ' . $endTime);
         $isSunday      = Carbon::parse($date)->isSunday();
 
-        // 1. Check if the Dosen has an active regular class overlap at this time
-        $dosenSchedules = Schedule::where('user_id', $dosenId)
-            ->whereDate('waktu_mulai', $date)
-            ->where('status', '!=', 'Diganti')
-            ->get();
-            
+        // Check main lecturer clash
+        $dosenClash = $this->checkLecturerClash($dosenId, $proposedStart, $proposedEnd, $date, $scheduleId);
         $dosenScheduleConflict = false;
-        foreach ($dosenSchedules as $s) {
-            $sStart = Carbon::parse($s->waktu_mulai);
-            $sEnd   = Carbon::parse($s->waktu_selesai);
-            if ($proposedStart->lt($sEnd) && $proposedEnd->gt($sStart)) {
-                $dosenScheduleConflict = true;
-                break;
-            }
-        }
-
-        // 2. Check if the Dosen has any approved/pending replacement requests overlap at this time
-        $dosenRequests = ScheduleRequest::whereHas('schedule', function($q) use ($dosenId) { 
-                $q->where('user_id', $dosenId); 
-            })
-            ->whereDate('waktu_mulai_usulan', $date)
-            ->whereIn('status', ['Pending', 'Disetujui'])
-            ->get();
-
         $dosenRequestConflict = false;
-        foreach ($dosenRequests as $req) {
-            $rStart = Carbon::parse($req->waktu_mulai_usulan);
-            $rEnd   = Carbon::parse($req->waktu_selesai_usulan);
-            if ($proposedStart->lt($rEnd) && $proposedEnd->gt($rStart)) {
+        $clashMessage = '';
+
+        if ($dosenClash) {
+            if (strpos($dosenClash, 'Pengajuan') !== false) {
                 $dosenRequestConflict = true;
-                break;
+            } else {
+                $dosenScheduleConflict = true;
+            }
+            $clashMessage = "Dosen Asli bentrok: " . $dosenClash;
+        }
+
+        // Check substitute lecturer clash (if provided)
+        $subScheduleConflict = false;
+        $subRequestConflict = false;
+        if ($dosenPenggantiId) {
+            $subClash = $this->checkLecturerClash($dosenPenggantiId, $proposedStart, $proposedEnd, $date, $scheduleId);
+            if ($subClash) {
+                if (strpos($subClash, 'Pengajuan') !== false) {
+                    $subRequestConflict = true;
+                } else {
+                    $subScheduleConflict = true;
+                }
+                $clashMessage = ($clashMessage ? $clashMessage . "\n" : "") . "Dosen Pengganti bentrok: " . $subClash;
             }
         }
 
-        // 3. Check if the selected Room is occupied (regular schedule or replacement request)
+        // Check daily course limit (max 3 courses a day)
+        $dosenLimitExceeded = false;
+        $dosenCourseCount = $this->getLecturerDailyCourseCount($dosenId, $date, $scheduleId);
+        if ($dosenCourseCount >= 3) {
+            $dosenLimitExceeded = true;
+            $clashMessage = ($clashMessage ? $clashMessage . "\n" : "") . "Dosen Asli melebihi batas maksimal mengajar harian (3 mata kuliah/hari). Terdaftar: {$dosenCourseCount} mata kuliah.";
+        }
+
+        $subLimitExceeded = false;
+        $subCourseCount = 0;
+        if ($dosenPenggantiId) {
+            $subCourseCount = $this->getLecturerDailyCourseCount($dosenPenggantiId, $date, $scheduleId);
+            if ($subCourseCount >= 3) {
+                $subLimitExceeded = true;
+                $clashMessage = ($clashMessage ? $clashMessage . "\n" : "") . "Dosen Pengganti melebihi batas maksimal mengajar harian (3 mata kuliah/hari). Terdaftar: {$subCourseCount} mata kuliah.";
+            }
+        }
+
+        // Room conflict check
         $roomRecord = null;
         $roomConflict = null;
         if ($roomName) {
@@ -168,9 +220,11 @@ class ScheduleController extends Controller
                     }
                 })
                 ->whereDate('waktu_mulai', $date)
-                ->where('status', '!=', 'Diganti')
-                ->with('dosen')
-                ->get();
+                ->where('status', '!=', 'Diganti');
+            if ($scheduleId) {
+                $roomSchedules->where('id', '!=', $scheduleId);
+            }
+            $roomSchedules = $roomSchedules->with('dosen')->get();
 
             foreach ($roomSchedules as $s) {
                 $sStart = Carbon::parse($s->waktu_mulai);
@@ -197,9 +251,11 @@ class ScheduleController extends Controller
                         }
                     })
                     ->whereDate('waktu_mulai_usulan', $date)
-                    ->whereIn('status', ['Pending', 'Disetujui'])
-                    ->with('schedule.dosen')
-                    ->get();
+                    ->whereIn('status', ['Pending', 'Disetujui']);
+                if ($scheduleId) {
+                    $roomRequests->where('schedule_id', '!=', $scheduleId);
+                }
+                $roomRequests = $roomRequests->with('schedule.dosen')->get();
 
                 foreach ($roomRequests as $req) {
                     $rStart = Carbon::parse($req->waktu_mulai_usulan);
@@ -220,14 +276,21 @@ class ScheduleController extends Controller
 
         return response()->json([
             'is_sunday'                => $isSunday,
-            'dosen_schedule_conflict'  => $dosenScheduleConflict,
-            'dosen_request_conflict'   => $dosenRequestConflict,
+            'dosen_schedule_conflict'  => $dosenScheduleConflict || $subScheduleConflict || $dosenLimitExceeded || $subLimitExceeded,
+            'dosen_request_conflict'   => $dosenRequestConflict || $subRequestConflict,
+            'dosen_clash_message'      => $dosenClash ? "Bentrok Dosen Asli: $dosenClash" : '',
+            'sub_clash_message'        => isset($subClash) && $subClash ? "Bentrok Dosen Pengganti: $subClash" : '',
+            'dosen_limit_exceeded'     => $dosenLimitExceeded,
+            'sub_limit_exceeded'       => $subLimitExceeded,
+            'dosen_course_count'       => $dosenCourseCount,
+            'sub_course_count'         => $subCourseCount,
             'room_conflict'            => $roomConflict,
             'room_details'             => $roomRecord ? [
                 'name'     => $roomRecord->name,
                 'type'     => $roomRecord->type,
                 'capacity' => $roomRecord->capacity,
             ] : null,
+            'message'                  => $clashMessage
         ]);
     }
 
@@ -235,7 +298,8 @@ class ScheduleController extends Controller
     {
         $schedule = Schedule::with(['dosen', 'room'])->findOrFail($id);
         $rooms    = Room::where('is_active', true)->orderBy('name')->get();
-        return view('schedules.request', compact('schedule', 'rooms'));
+        $dosens   = User::where('role', 'dosen')->where('id', '!=', $schedule->user_id)->orderBy('name')->get();
+        return view('schedules.request', compact('schedule', 'rooms', 'dosens'));
     }
 
     public function requestGeneral(Request $request)
@@ -243,14 +307,20 @@ class ScheduleController extends Controller
         $dosenId = $request->get('dosen_id');
         $date    = $request->get('date');
         $prefilledRoom = $request->get('room');
+        $endTimeParam  = $request->get('end_time');
 
-        if (!$dosenId) {
-            return redirect()->route('schedules.public')->with('error', 'Silakan pilih dosen terlebih dahulu.');
-        }
-
-        $dosen     = User::findOrFail($dosenId);
-        $schedules = Schedule::with('room')->where('user_id', $dosenId)->where('status', 'Terjadwal')->get();
         $rooms     = Room::where('is_active', true)->orderBy('name')->get();
+        $allDosens = User::where('role', 'dosen')->orderBy('name')->get();
+
+        if ($dosenId) {
+            $dosen     = User::findOrFail($dosenId);
+            $schedules = Schedule::with('room')->where('user_id', $dosenId)->where('status', 'Terjadwal')->get();
+            $dosens    = User::where('role', 'dosen')->where('id', '!=', $dosenId)->orderBy('name')->get();
+        } else {
+            $dosen     = null;
+            $schedules = collect();
+            $dosens    = $allDosens;
+        }
 
         $prefilledTime = null;
         if ($date) {
@@ -261,7 +331,17 @@ class ScheduleController extends Controller
             }
         }
 
-        return view('schedules.request_new', compact('dosen', 'schedules', 'prefilledTime', 'rooms', 'prefilledRoom'));
+        $prefilledEndTime = null;
+        if ($endTimeParam && $date) {
+            try {
+                $datePart = Carbon::parse(str_replace(' ', '+', $date))->format('Y-m-d');
+                $prefilledEndTime = Carbon::parse($datePart . ' ' . $endTimeParam);
+            } catch (\Exception $e) {
+                $prefilledEndTime = null;
+            }
+        }
+
+        return view('schedules.request_new', compact('dosen', 'schedules', 'prefilledTime', 'prefilledEndTime', 'rooms', 'prefilledRoom', 'dosens', 'allDosens'));
     }
 
     // ── API: Jadwal Mahasiswa by NIM ──────────────────────────────────────────
@@ -336,6 +416,29 @@ class ScheduleController extends Controller
         ]);
     }
 
+    public function apiDosenSchedules($id)
+    {
+        $schedules = Schedule::with('room')
+            ->where('user_id', $id)
+            ->where('status', 'Terjadwal')
+            ->get()
+            ->map(function($s) {
+                $start = \Carbon\Carbon::parse($s->waktu_mulai);
+                $end = \Carbon\Carbon::parse($s->waktu_selesai);
+                return [
+                    'id' => $s->id,
+                    'mata_kuliah' => $s->mata_kuliah,
+                    'kelas' => $s->kelas,
+                    'pertemuan' => $s->pertemuan,
+                    'tanggal' => $start->format('Y-m-d'),
+                    'jam_mulai' => $start->format('H:i'),
+                    'jam_selesai' => $end->format('H:i'),
+                    'details' => $s->mata_kuliah . ' — Kelas ' . $s->kelas . ', Pertemuan ' . $s->pertemuan . ' | ' . $start->format('l, d M Y H:i') . ' | Ruangan Asli: ' . ($s->room->name ?? '-') . ' (' . ($s->room->type ?? 'N/A') . ')'
+                ];
+            });
+        return response()->json($schedules);
+    }
+
     // ── Store (supports anonymous) ────────────────────────────────────────────
 
     public function storeRequest(Request $request, $id)
@@ -364,6 +467,7 @@ class ScheduleController extends Controller
             'ruangan_usulan'       => 'required|string|max:255',
             'alasan'               => 'required|string',
             'pengaju_type'         => 'required|in:dosen,mahasiswa',
+            'dosen_pengganti_id'   => 'nullable|exists:users,id',
         ];
 
         if (!Auth::check()) {
@@ -432,19 +536,37 @@ class ScheduleController extends Controller
         $isBentrok = false;
         $bentrokDetails = [];
 
-        // 1. Clash with lecturer schedules
-        $clash = Schedule::where('user_id', $dosenId)
-            ->where('id', '!=', $id)
-            ->where('waktu_mulai', '<', $request->waktu_selesai_usulan)
-            ->where('waktu_selesai', '>', $request->waktu_mulai_usulan)
-            ->first();
-
-        if ($clash) {
+        // 1. Clash with main lecturer
+        $dosenClash = $this->checkLecturerClash($dosenId, Carbon::parse($request->waktu_mulai_usulan), Carbon::parse($request->waktu_selesai_usulan), $request->waktu_mulai_usulan_date, $id);
+        if ($dosenClash) {
             $isBentrok = true;
-            $bentrokDetails[] = "Jadwal Dosen mengajar yang lain (" . $clash->mata_kuliah . " - Kelas " . $clash->kelas . ")";
+            $bentrokDetails[] = "Dosen Asli bentrok: " . $dosenClash;
         }
 
-        // 2. Room conflict (Schedule)
+        // 2. Clash with substitute lecturer (if provided)
+        $substituteId = $request->dosen_pengganti_id;
+        if ($substituteId) {
+            $subClash = $this->checkLecturerClash($substituteId, Carbon::parse($request->waktu_mulai_usulan), Carbon::parse($request->waktu_selesai_usulan), $request->waktu_mulai_usulan_date, $id);
+            if ($subClash) {
+                $isBentrok = true;
+                $bentrokDetails[] = "Dosen Pengganti bentrok: " . $subClash;
+            }
+        }
+
+        // 3. Daily course limit check (max 3 courses per lecturer a day)
+        $dosenDailyCount = $this->getLecturerDailyCourseCount($dosenId, $request->waktu_mulai_usulan_date, $id);
+        if ($dosenDailyCount >= 3) {
+            return back()->withErrors(['waktu_mulai_usulan' => "Dosen Asli tidak dapat menjadwalkan kelas pada hari ini karena sudah mencapai batas maksimal mengajar (3 mata kuliah/hari). Saat ini terdaftar: {$dosenDailyCount} mata kuliah."])->withInput();
+        }
+
+        if ($substituteId) {
+            $subDailyCount = $this->getLecturerDailyCourseCount($substituteId, $request->waktu_mulai_usulan_date, $id);
+            if ($subDailyCount >= 3) {
+                return back()->withErrors(['waktu_mulai_usulan' => "Dosen Pengganti tidak dapat menjadwalkan kelas pada hari ini karena sudah mencapai batas maksimal mengajar (3 mata kuliah/hari). Saat ini terdaftar: {$subDailyCount} mata kuliah."])->withInput();
+            }
+        }
+
+        // 4. Room conflict (Schedule)
         $roomRecord = Room::where('name', $request->ruangan_usulan)->first();
         $roomClashSchedule = Schedule::where(function($q) use ($roomRecord, $request) {
                 if ($roomRecord) {
@@ -457,6 +579,7 @@ class ScheduleController extends Controller
             ->where('status', '!=', 'Diganti')
             ->where('waktu_mulai', '<', $request->waktu_selesai_usulan)
             ->where('waktu_selesai', '>', $request->waktu_mulai_usulan)
+            ->where('id', '!=', $id)
             ->first();
 
         if ($roomClashSchedule) {
@@ -464,7 +587,7 @@ class ScheduleController extends Controller
             $bentrokDetails[] = "Ruangan digunakan jadwal reguler: " . $roomClashSchedule->mata_kuliah . " (" . $roomClashSchedule->kelas . ")";
         }
 
-        // 3. Room conflict (Requests)
+        // 5. Room conflict (Requests)
         $roomConflictReq = ScheduleRequest::where(function($q) use ($roomRecord, $request) {
                 if ($roomRecord) {
                     $q->where('room_id', $roomRecord->id)->orWhere('ruangan_usulan', $request->ruangan_usulan);
@@ -483,7 +606,7 @@ class ScheduleController extends Controller
             $bentrokDetails[] = "Ruangan digunakan pengajuan lain: " . $roomConflictReq->schedule->mata_kuliah . " (" . $roomConflictReq->schedule->kelas . ")";
         }
 
-        // 4. Clash with Student Schedules (if student)
+        // 6. Clash with Student Schedules (if student)
         if ($request->pengaju_type === 'mahasiswa' && isset($mahasiswa)) {
             // Check student's regular class schedules
             $studentRegularConflict = Schedule::where('kelas', $mahasiswa->kelas)
@@ -520,7 +643,7 @@ class ScheduleController extends Controller
                 $isBentrokMahasiswa = true;
                 
                 // Find alternative slot on same day
-                $altSlot = $this->findAlternativeSlot($schedule, $mahasiswa, $request->waktu_mulai_usulan_date, $request->ruangan_usulan);
+                $altSlot = $this->findAlternativeSlot($schedule, $mahasiswa, $request->waktu_mulai_usulan_date, $request->ruangan_usulan, $substituteId);
                 
                 $aiSolution = "\n\n🤖 [AI SOLUSI BENTROK - MAHASISWA MENGULANG]:\n";
                 $aiSolution .= "- Terdeteksi bentrok dengan: " . implode(', ', $bentrokDetails) . ".\n";
@@ -563,6 +686,7 @@ class ScheduleController extends Controller
 
         $scheduleRequest = ScheduleRequest::create([
             'schedule_id'         => $schedule->id,
+            'dosen_pengganti_id'  => $request->dosen_pengganti_id ?: null,
             'pengaju_id'          => $pengajuId,
             'pengaju_nama'        => $request->pengaju_nama ?? ($pengajuId ? null : $request->pengaju_nama),
             'pengaju_nim_nidn'    => $request->pengaju_nim_nidn,
@@ -598,7 +722,7 @@ class ScheduleController extends Controller
     /**
      * Scan LPKIA default lecture sessions to find a fully vacant slot.
      */
-    private function findAlternativeSlot($schedule, $mahasiswa, $date, $roomName)
+    private function findAlternativeSlot($schedule, $mahasiswa, $date, $roomName, $substituteId = null)
     {
         $sessions = \DB::table('jam_kuliahs')->where('is_active', true)->orderBy('urutan')->get();
         $dosenId = $schedule->user_id;
@@ -609,26 +733,15 @@ class ScheduleController extends Controller
             $start = Carbon::parse($startStr);
             $end = Carbon::parse($endStr);
             
-            // Check Dosen schedules
-            $dosenScheduleConflict = Schedule::where('user_id', $dosenId)
-                ->where('status', '!=', 'Diganti')
-                ->where('waktu_mulai', '<', $end)
-                ->where('waktu_selesai', '>', $start)
-                ->exists();
-                
-            if ($dosenScheduleConflict) continue;
-            
-            // Check Dosen requests
-            $dosenRequestConflict = ScheduleRequest::whereHas('schedule', function($q) use ($dosenId) {
-                    $q->where('user_id', $dosenId);
-                })
-                ->whereDate('waktu_mulai_usulan', $date)
-                ->whereIn('status', ['Pending', 'Disetujui'])
-                ->where('waktu_mulai_usulan', '<', $end)
-                ->where('waktu_selesai_usulan', '>', $start)
-                ->exists();
-                
-            if ($dosenRequestConflict) continue;
+            // Check main lecturer clash using checkLecturerClash helper
+            if ($this->checkLecturerClash($dosenId, $start, $end, $date, $schedule->id)) {
+                continue;
+            }
+
+            // Check substitute lecturer clash using checkLecturerClash helper (if any)
+            if ($substituteId && $this->checkLecturerClash($substituteId, $start, $end, $date, $schedule->id)) {
+                continue;
+            }
             
             // Check student schedules (regular class)
             $studentScheduleConflict = false;
@@ -691,5 +804,153 @@ class ScheduleController extends Controller
         }
         
         return null;
+    }
+
+    private function checkLecturerClash($lecturerId, $proposedStart, $proposedEnd, $date, $excludeScheduleId = null, $excludeRequestId = null)
+    {
+        // 1. Regular schedules where they are main teacher (no substitute and not replaced)
+        $schedules = Schedule::where('user_id', $lecturerId)
+            ->whereNull('dosen_pengganti_id')
+            ->where('status', '!=', 'Diganti')
+            ->whereDate('waktu_mulai', $date);
+        if ($excludeScheduleId) {
+            $schedules->where('id', '!=', $excludeScheduleId);
+        }
+        $schedules = $schedules->get();
+
+        foreach ($schedules as $s) {
+            $sStart = Carbon::parse($s->waktu_mulai);
+            $sEnd   = Carbon::parse($s->waktu_selesai);
+            if ($proposedStart->lt($sEnd) && $proposedEnd->gt($sStart)) {
+                return "Jadwal Reguler: " . $s->mata_kuliah . " (" . $s->kelas . ") pada " . $sStart->format('H:i') . " - " . $sEnd->format('H:i');
+            }
+        }
+
+        // 2. Schedules where they are the substitute teacher
+        $subSchedules = Schedule::where('dosen_pengganti_id', $lecturerId)
+            ->where('status', '!=', 'Diganti')
+            ->whereDate('waktu_mulai', $date);
+        if ($excludeScheduleId) {
+            $subSchedules->where('id', '!=', $excludeScheduleId);
+        }
+        $subSchedules = $subSchedules->get();
+
+        foreach ($subSchedules as $s) {
+            $sStart = Carbon::parse($s->waktu_mulai);
+            $sEnd   = Carbon::parse($s->waktu_selesai);
+            if ($proposedStart->lt($sEnd) && $proposedEnd->gt($sStart)) {
+                return "Jadwal Pengganti: " . $s->mata_kuliah . " (" . $s->kelas . ") pada " . $sStart->format('H:i') . " - " . $sEnd->format('H:i');
+            }
+        }
+
+        // 3. Requests where they are the main teacher without substitute
+        $reqMain = ScheduleRequest::whereIn('status', ['Pending', 'Disetujui'])
+            ->whereNull('dosen_pengganti_id')
+            ->whereHas('schedule', function($q) use ($lecturerId, $excludeScheduleId) {
+                $q->where('user_id', $lecturerId);
+                if ($excludeScheduleId) {
+                    $q->where('id', '!=', $excludeScheduleId);
+                }
+            })
+            ->whereDate('waktu_mulai_usulan', $date);
+        if ($excludeRequestId) {
+            $reqMain->where('id', '!=', $excludeRequestId);
+        }
+        $reqMain = $reqMain->get();
+
+        foreach ($reqMain as $req) {
+            $rStart = Carbon::parse($req->waktu_mulai_usulan);
+            $rEnd   = Carbon::parse($req->waktu_selesai_usulan);
+            if ($proposedStart->lt($rEnd) && $proposedEnd->gt($rStart)) {
+                return "Pengajuan Pengganti: " . $req->schedule->mata_kuliah . " (" . $req->schedule->kelas . ") pada " . $rStart->format('H:i') . " - " . $rEnd->format('H:i');
+            }
+        }
+
+        // 4. Requests where they are the substitute teacher
+        $reqSub = ScheduleRequest::whereIn('status', ['Pending', 'Disetujui'])
+            ->where('dosen_pengganti_id', $lecturerId)
+            ->whereDate('waktu_mulai_usulan', $date);
+        if ($excludeRequestId) {
+            $reqSub->where('id', '!=', $excludeRequestId);
+        }
+        if ($excludeScheduleId) {
+            $reqSub->where('schedule_id', '!=', $excludeScheduleId);
+        }
+        $reqSub = $reqSub->get();
+
+        foreach ($reqSub as $req) {
+            $rStart = Carbon::parse($req->waktu_mulai_usulan);
+            $rEnd   = Carbon::parse($req->waktu_selesai_usulan);
+            if ($proposedStart->lt($rEnd) && $proposedEnd->gt($rStart)) {
+                return "Pengajuan Pengganti (sebagai Dosen Pengganti): " . $req->schedule->mata_kuliah . " (" . $req->schedule->kelas . ") pada " . $rStart->format('H:i') . " - " . $rEnd->format('H:i');
+            }
+        }
+
+        return null;
+    }
+
+    private function getLecturerDailyCourseCount($lecturerId, $date, $excludeScheduleId = null, $excludeRequestId = null)
+    {
+        // 1. Regular schedules where they are main teacher (no substitute and not replaced)
+        $regularQuery = Schedule::where('user_id', $lecturerId)
+            ->whereNull('dosen_pengganti_id')
+            ->where('status', '!=', 'Diganti')
+            ->whereDate('waktu_mulai', $date);
+        if ($excludeScheduleId) {
+            $regularQuery->where('id', '!=', $excludeScheduleId);
+        }
+        $regularCount = $regularQuery->count();
+
+        // 2. Schedules where they are the substitute teacher
+        $subQuery = Schedule::where('dosen_pengganti_id', $lecturerId)
+            ->where('status', '!=', 'Diganti')
+            ->whereDate('waktu_mulai', $date);
+        if ($excludeScheduleId) {
+            $subQuery->where('id', '!=', $excludeScheduleId);
+        }
+        $subCount = $subQuery->count();
+
+        // 3. Requests where they are the main teacher without substitute
+        $reqMainQuery = ScheduleRequest::whereIn('status', ['Pending', 'Disetujui'])
+            ->whereNull('dosen_pengganti_id')
+            ->whereHas('schedule', function($q) use ($lecturerId, $excludeScheduleId) {
+                $q->where('user_id', $lecturerId);
+                if ($excludeScheduleId) {
+                    $q->where('id', '!=', $excludeScheduleId);
+                }
+            })
+            ->whereDate('waktu_mulai_usulan', $date);
+        if ($excludeRequestId) {
+            $reqMainQuery->where('id', '!=', $excludeRequestId);
+        }
+        $reqMainCount = $reqMainQuery->count();
+
+        // 4. Requests where they are the substitute teacher
+        $reqSubQuery = ScheduleRequest::whereIn('status', ['Pending', 'Disetujui'])
+            ->where('dosen_pengganti_id', $lecturerId)
+            ->whereDate('waktu_mulai_usulan', $date);
+        if ($excludeRequestId) {
+            $reqSubQuery->where('id', '!=', $excludeRequestId);
+        }
+        if ($excludeScheduleId) {
+            $reqSubQuery->where('schedule_id', '!=', $excludeScheduleId);
+        }
+        $reqSubCount = $reqSubQuery->count();
+
+        return $regularCount + $subCount + $reqMainCount + $reqSubCount;
+    }
+
+    public function printRequest($id)
+    {
+        $request = ScheduleRequest::with([
+            'schedule.dosen', 
+            'schedule.prodi', 
+            'schedule.room', 
+            'pengaju', 
+            'room', 
+            'dosenPengganti'
+        ])->findOrFail($id);
+        
+        return view('schedules.print_request', compact('request'));
     }
 }

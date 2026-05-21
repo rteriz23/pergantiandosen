@@ -12,12 +12,12 @@
         {{-- Header --}}
         <div class="text-center mb-10">
             <span class="inline-block py-1 px-3 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-sm font-semibold tracking-wide mb-3">
-                Sistem Pergantian Jadwal — LPKIA
+                Manajemen Pergantian Jadwal — LPKIA
             </span>
             <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-purple-600 tracking-tight mb-2">
                 Pengajuan Jadwal Pengganti
             </h1>
-            <p class="text-gray-500">Dosen: <span class="font-bold text-indigo-700">{{ $dosen->name }}</span></p>
+            <p class="text-gray-500">Dosen: <span class="font-bold text-indigo-700" x-text="selectedDosenName || 'Silakan Pilih Dosen'"></span></p>
         </div>
 
         @if($errors->any())
@@ -52,14 +52,25 @@
                 <div x-show="pengajuType === 'dosen'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Nama Dosen</label>
-                        <input type="text" name="pengaju_nama_dosen" placeholder="Nama dosen"
-                            value="{{ $dosen->name }}" readonly
-                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-600 cursor-not-allowed">
+                        @if($dosen)
+                            <input type="text" name="pengaju_nama_dosen" placeholder="Nama dosen"
+                                :value="selectedDosenName" readonly
+                                class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-600 cursor-not-allowed">
+                        @else
+                            <select id="dosen_select" @change="changeDosen()" required
+                                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- Pilih Dosen --</option>
+                                @foreach($allDosens as $d)
+                                    <option value="{{ $d->id }}" data-nidn="{{ $d->nidn ?? '' }}" data-name="{{ $d->name }}">{{ $d->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="hidden" name="pengaju_nama_dosen" :value="selectedDosenName">
+                        @endif
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">NIDN</label>
                         <input type="text" name="pengaju_nidn_dosen" placeholder="NIDN"
-                            value="" readonly
+                            :value="dosenNidn" readonly
                             class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-600 cursor-not-allowed">
                     </div>
                 </div>
@@ -166,15 +177,25 @@
                 <select id="original_schedule_select" @change="updateOriginal()" required
                     class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
                     <option value="">-- Pilih Mata Kuliah / Jadwal --</option>
-                    @foreach($schedules as $s)
-                    <option value="{{ $s->id }}"
-                        data-details="{{ $s->mata_kuliah }} — Kelas {{ $s->kelas }}, Pertemuan {{ $s->pertemuan }} | {{ \Carbon\Carbon::parse($s->waktu_mulai)->format('l, d M Y H:i') }} | Ruangan Asli: {{ $s->room->name ?? '-' }} ({{ $s->room->type ?? 'N/A' }})">
-                        {{ $s->mata_kuliah }} ({{ $s->kelas }}) — Pert. {{ $s->pertemuan }}
-                    </option>
-                    @endforeach
+                    <template x-for="s in schedulesList" :key="s.id">
+                        <option :value="s.id" x-text="s.mata_kuliah + ' (' + s.kelas + ') — Pert. ' + s.pertemuan"></option>
+                    </template>
                 </select>
                 <div x-show="originalDetails !== ''" x-text="originalDetails"
                     class="mt-3 p-3 bg-indigo-50 rounded-xl text-xs text-indigo-700 font-medium border border-indigo-100"></div>
+            </div>
+
+            {{-- Dosen Pengganti Selection --}}
+            <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/60 p-6">
+                <h3 class="text-xs font-bold text-teal-600 uppercase tracking-widest mb-4">Dosen Pengganti (Opsional)</h3>
+                <select name="dosen_pengganti_id" x-model="substituteId" @change="checkAvailability()"
+                    class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-teal-500">
+                    <option value="">-- Pilih Dosen Pengganti (Tetap Mengajar Sendiri) --</option>
+                    @foreach($dosens as $d)
+                        <option value="{{ $d->id }}">{{ $d->name }}</option>
+                    @endforeach
+                </select>
+                <p class="text-xs text-gray-500 mt-2">Pilih dosen pengganti jika Anda ingin menugaskan dosen lain untuk menggantikan kelas ini.</p>
             </div>
 
             {{-- Proposed Schedule --}}
@@ -258,7 +279,7 @@
 
             {{-- Submit --}}
             <div class="flex items-center justify-between">
-                <a href="{{ route('schedules.public', ['dosen_id' => $dosen->id]) }}"
+                <a href="{{ $dosen ? route('schedules.public', ['dosen_id' => $dosen->id]) : route('schedules.public') }}"
                     class="text-gray-500 hover:text-indigo-600 font-medium flex items-center gap-1 transition-colors">
                     ← Kembali ke Kalender
                 </a>
@@ -275,13 +296,18 @@
 function requestForm() {
     return {
         pengajuType: 'dosen',
+        dosenId: '{{ $dosen->id ?? "" }}',
+        dosenNidn: '{{ $dosen->nidn ?? "" }}',
+        selectedDosenName: '{{ $dosen->name ?? "" }}',
+        schedulesList: [],
         selectedScheduleId: '',
         originalDetails: '',
         proposedDate: '{{ $prefilledTime ? $prefilledTime->format("Y-m-d") : "" }}',
         proposedStart: '{{ $prefilledTime ? $prefilledTime->format("H:i") : "07:30" }}',
-        proposedEnd: '{{ $prefilledTime ? $prefilledTime->copy()->addHours(2)->format("H:i") : "09:40" }}',
+        proposedEnd: '{{ isset($prefilledEndTime) && $prefilledEndTime ? $prefilledEndTime->format("H:i") : ($prefilledTime ? $prefilledTime->copy()->addHours(2)->format("H:i") : "09:40") }}',
         proposedRoom: '{{ $prefilledRoom ?? "" }}',
         proposedRoomType: '',
+        substituteId: '',
         isBlocked: false,
         statusTitle: 'Pilih tanggal untuk cek ketersediaan',
         statusMessage: 'Masukkan tanggal, jam, dan ruangan usulan untuk memeriksa ketersediaan sistem.',
@@ -299,14 +325,56 @@ function requestForm() {
         nimNotFound: false,
 
         init() {
+            @if($dosen)
+            this.schedulesList = [
+                @foreach($schedules as $s)
+                {
+                    id: '{{ $s->id }}',
+                    mata_kuliah: '{{ $s->mata_kuliah }}',
+                    kelas: '{{ $s->kelas }}',
+                    pertemuan: '{{ $s->pertemuan }}',
+                    details: '{{ $s->mata_kuliah }} — Kelas {{ $s->kelas }}, Pertemuan {{ $s->pertemuan }} | {{ \Carbon\Carbon::parse($s->waktu_mulai)->format("l, d M Y H:i") }} | Ruangan Asli: {{ $s->room->name ?? "-" }} ({{ $s->room->type ?? "N/A" }})'
+                },
+                @endforeach
+            ];
+            @endif
             if (this.proposedDate) this.checkAvailability();
+        },
+
+        async changeDosen() {
+            const sel = document.getElementById('dosen_select');
+            if (!sel || !sel.value) {
+                this.dosenId = '';
+                this.dosenNidn = '';
+                this.selectedDosenName = '';
+                this.schedulesList = [];
+                this.selectedScheduleId = '';
+                this.originalDetails = '';
+                return;
+            }
+            const opt = sel.options[sel.selectedIndex];
+            this.dosenId = opt.value;
+            this.dosenNidn = opt.getAttribute('data-nidn') || '';
+            this.selectedDosenName = opt.getAttribute('data-name') || '';
+            this.selectedScheduleId = '';
+            this.originalDetails = '';
+
+            try {
+                const res = await fetch(`/api/dosen/${this.dosenId}/schedules`);
+                const data = await res.json();
+                this.schedulesList = data;
+            } catch(e) {
+                console.error('Fetch lecturer schedules error:', e);
+            }
+            this.checkAvailability();
         },
 
         updateOriginal() {
             const sel = document.getElementById('original_schedule_select');
             this.selectedScheduleId = sel.value;
-            const opt = sel.options[sel.selectedIndex];
-            this.originalDetails = opt.getAttribute('data-details') || '';
+            const matched = this.schedulesList.find(s => String(s.id) === String(this.selectedScheduleId));
+            this.originalDetails = matched ? matched.details : '';
+            this.checkAvailability();
         },
 
         async lookupMahasiswa() {
@@ -342,7 +410,7 @@ function requestForm() {
         },
 
         async checkAvailability() {
-            if (!this.proposedDate || !this.proposedStart || !this.proposedEnd) return;
+            if (!this.dosenId || !this.proposedDate || !this.proposedStart || !this.proposedEnd) return;
             const dateObj = new Date(this.proposedDate);
             if (dateObj.getDay() === 0) {
                 this.isBlocked = true;
@@ -356,22 +424,22 @@ function requestForm() {
             }
 
             try {
-                const res = await fetch(`/api/availability?date=${this.proposedDate}&start_time=${this.proposedStart}&end_time=${this.proposedEnd}&dosen_id={{ $dosen->id }}&room=${encodeURIComponent(this.proposedRoom)}`);
+                const res = await fetch(`/api/availability?date=${this.proposedDate}&start_time=${this.proposedStart}&end_time=${this.proposedEnd}&dosen_id=${this.dosenId}&dosen_pengganti_id=${this.substituteId}&schedule_id=${this.selectedScheduleId}&room=${encodeURIComponent(this.proposedRoom)}`);
                 const data = await res.json();
 
                 this.proposedRoomType = data.room_details ? data.room_details.type : '';
 
                 if (data.dosen_schedule_conflict) {
                     this.isBlocked = true;
-                    this.statusTitle = '⚠️ Dosen memiliki jadwal mengajar reguler lain!';
-                    this.statusMessage = 'Dosen yang bersangkutan sudah memiliki jadwal mengajar reguler lain pada jam terpilih.';
+                    this.statusTitle = '⚠️ Jadwal / Kuota Dosen Bentrok!';
+                    this.statusMessage = data.message.replace(/\n/g, '<br>') || 'Dosen yang bersangkutan sudah memiliki jadwal mengajar reguler lain atau melebihi kuota harian pada jam terpilih.';
                     this.statusColor = 'bg-red-50 border-red-200';
                     this.statusTextColor = 'text-red-700';
                     this.statusIcon = '❌';
                 } else if (data.dosen_request_conflict) {
                     this.isBlocked = true;
-                    this.statusTitle = '⚠️ Dosen memiliki permohonan pengganti lain!';
-                    this.statusMessage = 'Dosen yang bersangkutan memiliki permohonan pengganti lain yang sedang diproses atau disetujui pada jam terpilih.';
+                    this.statusTitle = '⚠️ Permohonan Bentrok!';
+                    this.statusMessage = data.message.replace(/\n/g, '<br>') || 'Dosen yang bersangkutan memiliki permohonan pengganti lain pada jam terpilih.';
                     this.statusColor = 'bg-red-50 border-red-200';
                     this.statusTextColor = 'text-red-700';
                     this.statusIcon = '❌';

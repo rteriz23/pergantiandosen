@@ -1,12 +1,8 @@
 <x-guest-layout>
+    @include('layouts.public-navigation')
+    
     <div class="py-8 bg-gray-50 min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="mb-4">
-                <a href="{{ route('schedules.public') }}" class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Kembali ke Kalender Dosen
-                </a>
-            </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <h2 class="font-black text-2xl text-gray-800 mb-6">Kalender Akademik</h2>

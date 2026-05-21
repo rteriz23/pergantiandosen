@@ -19,11 +19,13 @@ Route::get('/api/schedules', [ScheduleController::class, 'apiSchedules'])->name(
 Route::get('/api/availability', [ScheduleController::class, 'checkAvailability'])->name('api.availability');
 Route::get('/api/rooms', [ScheduleController::class, 'apiRooms'])->name('api.rooms');
 Route::get('/api/mahasiswa/{nim}/jadwal', [ScheduleController::class, 'apiMahasiswaJadwal'])->name('api.mahasiswa.jadwal');
+Route::get('/api/dosen/{id}/schedules', [ScheduleController::class, 'apiDosenSchedules'])->name('api.dosen.schedules');
 
 // Public Request Pages (no login needed)
 Route::get('/schedules/request/new', [ScheduleController::class, 'requestGeneral'])->name('schedules.request_new');
 Route::get('/schedules/request/{id}', [ScheduleController::class, 'requestChange'])->name('schedules.request');
 Route::post('/schedules/request/{id}', [ScheduleController::class, 'storeRequest'])->name('schedules.storeRequest');
+Route::get('/schedules/request/{id}/print', [ScheduleController::class, 'printRequest'])->name('schedules.request_print');
 
 // ── Authenticated Routes ──────────────────────────────────────────────────────
 Route::middleware(['auth'])->group(function () {
@@ -58,6 +60,11 @@ Route::middleware(['auth'])->group(function () {
     // Rekap Presensi Mahasiswa
     Route::get('/baa/rekap-mahasiswa', [BaaController::class, 'rekapMahasiswa'])->name('baa.rekap_mahasiswa');
     Route::get('/baa/rekap-mahasiswa/export', [BaaController::class, 'exportRekapMahasiswa'])->name('baa.rekap_mahasiswa.export');
+
+    // Laporan Pergantian Jadwal
+    Route::get('/baa/laporan-pergantian', [BaaController::class, 'laporanPergantian'])->name('baa.laporan_pergantian');
+    Route::get('/baa/laporan-pergantian/export', [BaaController::class, 'exportLaporanPergantian'])->name('baa.laporan_pergantian.export');
+    Route::get('/baa/presensi/{id}/print', [BaaController::class, 'printPresensi'])->name('baa.presensi.print');
 
     // Periode management (BAA)
     Route::get('/baa/periodes', [\App\Http\Controllers\Baa\PeriodeController::class, 'index'])->name('baa.periodes.index');

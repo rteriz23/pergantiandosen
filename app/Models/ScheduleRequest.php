@@ -12,6 +12,7 @@ class ScheduleRequest extends Model
 
     protected $fillable = [
         'schedule_id',
+        'dosen_pengganti_id',
         'pengaju_id',
         'pengaju_nama',
         'pengaju_nim_nidn',
@@ -51,6 +52,11 @@ class ScheduleRequest extends Model
     public function pengaju()
     {
         return $this->belongsTo(User::class, 'pengaju_id');
+    }
+
+    public function dosenPengganti()
+    {
+        return $this->belongsTo(User::class, 'dosen_pengganti_id');
     }
 
     public function room()

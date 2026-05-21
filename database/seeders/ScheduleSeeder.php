@@ -50,19 +50,43 @@ class ScheduleSeeder extends Seeder
         \App\Models\Kelas::truncate(); // Hapus kelas lama agar bersih
         \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
-        // Buat 36 ruangan master
-        $roomNames = [];
-        for ($i = 101; $i <= 110; $i++) $roomNames[] = "R. $i";
-        for ($i = 201; $i <= 210; $i++) $roomNames[] = "R. $i";
-        for ($i = 301; $i <= 310; $i++) $roomNames[] = "R. $i";
-        for ($i = 1; $i <= 5; $i++) $roomNames[] = "Lab. Komputer $i";
-        $roomNames[] = "Aula";
+        // Buat daftar ruangan master yang komprehensif (sesuai PDF + opsional kosong)
+        $roomNames = [
+            // Teori 100
+            'Ruang Teori 101', 'Ruang Teori 102', 'Ruang Teori 103', 'Ruang Teori 104', 'Ruang Teori 105',
+            'Ruang Teori 106', 'Ruang Teori 107', 'Ruang Teori 108', 'Ruang Teori 109', 'Ruang Teori 110',
+            'Ruang Teori 111', 'Ruang Teori 112', 'Ruang Teori 113', 'Ruang Teori 140',
+            // Teori 200
+            'Ruang Teori 201', 'Ruang Teori 202', 'Ruang Teori 203', 'Ruang Teori 204', 'Ruang Teori 205',
+            'Ruang Teori 206', 'Ruang Teori 207', 'Ruang Teori 208', 'Ruang Teori 209', 'Ruang Teori 210',
+            // Teori 300
+            'Ruang Teori 301', 'Ruang Teori 302', 'Ruang Teori 303', 'Ruang Teori 304', 'Ruang Teori 305',
+            'Ruang Teori 306', 'Ruang Teori 307', 'Ruang Teori 308', 'Ruang Teori 309', 'Ruang Teori 310',
+            // Labs / Labkom
+            'Lab Perkantoran (R. 201)',
+            'Lab. Multimedia 1 (R.301)',
+            'Lab. Pemrograman (R. 302)',
+            'Lab. Aplikasi (R.304)',
+            'Lab. Multimedia 2 (R.305)',
+            'Lab. Basis Data',
+            'Aula',
+            'Online'
+        ];
 
         $rooms = [];
         foreach ($roomNames as $name) {
-            $rooms[] = \App\Models\Room::create([
+            $type = 'kelas';
+            if (str_contains(strtolower($name), 'online')) {
+                $type = 'online';
+            } elseif (str_contains(strtolower($name), 'lab')) {
+                $type = 'lab';
+            } elseif (str_contains(strtolower($name), 'aula')) {
+                $type = 'aula';
+            }
+            
+            $rooms[$name] = \App\Models\Room::create([
                 'name' => $name,
-                'type' => str_contains($name, 'Lab') ? 'lab' : (str_contains($name, 'Aula') ? 'aula' : 'kelas'),
+                'type' => $type,
                 'capacity' => 40,
                 'is_active' => true
             ]);
@@ -113,24 +137,34 @@ class ScheduleSeeder extends Seeder
                 $start = $data['waktu_mulai'];
                 $end = $data['waktu_selesai'];
                 
-                // Cari ruangan yang kosong di jam ini
-                $assignedRoomId = null;
-                foreach ($rooms as $r) {
-                    $overlap = Schedule::where('room_id', $r->id)
-                        ->where(function($q) use ($start, $end) {
-                            $q->whereBetween('waktu_mulai', [$start, $end])
-                              ->orWhereBetween('waktu_selesai', [$start, $end])
-                              ->orWhere(function($q2) use ($start, $end) {
-                                  $q2->where('waktu_mulai', '<=', $start)
-                                     ->where('waktu_selesai', '>=', $end);
-                              });
-                        })->first();
-                        
-                    if (!$overlap) {
-                        $assignedRoomId = $r->id;
-                        break;
-                    }
+                // Ambil dan normalisasi nama ruangan dari JSON
+                $ruangName = $data['ruang'] ?? 'Ruang Teori 102';
+                if ($ruangName === 'Lab Pemrograman 302') {
+                    $ruangName = 'Lab. Pemrograman (R. 302)';
+                } elseif ($ruangName === 'Lab.Basis Data') {
+                    $ruangName = 'Lab. Basis Data';
                 }
+
+                // Cari atau buat ruangan jika belum terdaftar
+                if (!isset($rooms[$ruangName])) {
+                    $type = 'kelas';
+                    if (str_contains(strtolower($ruangName), 'online')) {
+                        $type = 'online';
+                    } elseif (str_contains(strtolower($ruangName), 'lab')) {
+                        $type = 'lab';
+                    } elseif (str_contains(strtolower($ruangName), 'aula')) {
+                        $type = 'aula';
+                    }
+
+                    $rooms[$ruangName] = \App\Models\Room::create([
+                        'name' => $ruangName,
+                        'type' => $type,
+                        'capacity' => 40,
+                        'is_active' => true
+                    ]);
+                }
+
+                $assignedRoomId = $rooms[$ruangName]->id;
 
                 Schedule::create([
                     'user_id' => $dosen->id,
@@ -148,6 +182,6 @@ class ScheduleSeeder extends Seeder
             }
         }
         
-        $this->command->info($count . ' Jadwal berhasil di-seed dengan alokasi ruangan otomatis serta sync Mata Kuliah dan Kelas.');
+        $this->command->info($count . ' Jadwal berhasil di-seed dengan alokasi ruangan nyata dari PDF serta sync Mata Kuliah dan Kelas.');
     }
 }

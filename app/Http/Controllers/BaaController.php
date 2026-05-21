@@ -358,4 +358,148 @@ class BaaController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    public function laporanPergantian(Request $request)
+    {
+        $query = ScheduleRequest::with(['schedule.prodi', 'schedule.dosen', 'pengaju', 'room', 'dosenPengganti'])
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('waktu_mulai_usulan', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('waktu_mulai_usulan', '<=', $request->end_date);
+        }
+
+        if ($request->filled('dosen_id')) {
+            $dosenId = $request->dosen_id;
+            $query->where(function($q) use ($dosenId) {
+                $q->whereHas('schedule', function($sq) use ($dosenId) {
+                    $sq->where('user_id', $dosenId);
+                })->orWhere('dosen_pengganti_id', $dosenId);
+            });
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('schedule', function($sq) use ($search) {
+                    $sq->where('mata_kuliah', 'like', "%{$search}%")
+                      ->orWhere('kelas', 'like', "%{$search}%")
+                      ->orWhereHas('dosen', function($dq) use ($search) {
+                          $dq->where('name', 'like', "%{$search}%");
+                      });
+                })
+                ->orWhereHas('dosenPengganti', function($dq) use ($search) {
+                    $dq->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('pengaju_nama', 'like', "%{$search}%");
+            });
+        }
+
+        $requests = $query->paginate(15)->withQueryString();
+        $dosens = User::where('role', 'dosen')->orderBy('name')->get();
+
+        return view('baa.laporan_pergantian', compact('requests', 'dosens'));
+    }
+
+    public function exportLaporanPergantian(Request $request)
+    {
+        $query = ScheduleRequest::with(['schedule.prodi', 'schedule.dosen', 'pengaju', 'room', 'dosenPengganti'])
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('start_date')) {
+            $query->whereDate('waktu_mulai_usulan', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('waktu_mulai_usulan', '<=', $request->end_date);
+        }
+        if ($request->filled('dosen_id')) {
+            $dosenId = $request->dosen_id;
+            $query->where(function($q) use ($dosenId) {
+                $q->whereHas('schedule', function($sq) use ($dosenId) {
+                    $sq->where('user_id', $dosenId);
+                })->orWhere('dosen_pengganti_id', $dosenId);
+            });
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('schedule', function($sq) use ($search) {
+                    $sq->where('mata_kuliah', 'like', "%{$search}%")
+                      ->orWhere('kelas', 'like', "%{$search}%")
+                      ->orWhereHas('dosen', function($dq) use ($search) {
+                          $dq->where('name', 'like', "%{$search}%");
+                      });
+                })
+                ->orWhereHas('dosenPengganti', function($dq) use ($search) {
+                    $dq->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('pengaju_nama', 'like', "%{$search}%");
+            });
+        }
+
+        $records = $query->get();
+
+        $headers = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="laporan_pergantian_jadwal_' . now()->format('Ymd_His') . '.csv"',
+        ];
+
+        $callback = function () use ($records) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, [
+                'Tanggal Diajukan', 
+                'Dosen Asli', 
+                'Dosen Pengganti', 
+                'Mata Kuliah', 
+                'Kelas', 
+                'Waktu Semula', 
+                'Waktu Usulan', 
+                'Ruangan Usulan', 
+                'Pengaju', 
+                'Status'
+            ], ';');
+
+            foreach ($records as $r) {
+                fputcsv($file, [
+                    $r->created_at ? $r->created_at->format('Y-m-d H:i') : '-',
+                    $r->schedule->dosen->name ?? '-',
+                    $r->dosenPengganti->name ?? 'Tidak Ada',
+                    $r->schedule->mata_kuliah ?? '-',
+                    $r->schedule->kelas ?? '-',
+                    $r->schedule ? Carbon::parse($r->schedule->waktu_mulai)->format('Y-m-d H:i') . ' - ' . Carbon::parse($r->schedule->waktu_selesai)->format('H:i') : '-',
+                    Carbon::parse($r->waktu_mulai_usulan)->format('Y-m-d H:i') . ' - ' . Carbon::parse($r->waktu_selesai_usulan)->format('H:i'),
+                    $r->room->name ?? ($r->ruangan_usulan ?? '-'),
+                    $r->pengaju_nama ?? ($r->pengaju->name ?? 'Mahasiswa'),
+                    $r->status
+                ], ';');
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function printPresensi($id)
+    {
+        $presensi = PresensiDosen::with([
+            'dosen', 
+            'scheduleRequest.schedule.prodi', 
+            'scheduleRequest.room', 
+            'schedule.prodi',
+            'schedule.room',
+            'dicatatOleh'
+        ])->findOrFail($id);
+        
+        return view('baa.print_presensi', compact('presensi'));
+    }
 }

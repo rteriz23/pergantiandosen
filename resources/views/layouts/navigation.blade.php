@@ -34,6 +34,9 @@
                         <x-nav-link :href="route('baa.rekap_mahasiswa')" :active="request()->routeIs('baa.rekap_mahasiswa*')">
                             Rekap Mahasiswa
                         </x-nav-link>
+                        <x-nav-link :href="route('baa.laporan_pergantian')" :active="request()->routeIs('baa.laporan_pergantian*')">
+                            Laporan
+                        </x-nav-link>
                         <x-nav-link :href="route('baa.settings')" :active="request()->routeIs('baa.settings')">
                             Pengaturan
                         </x-nav-link>
@@ -147,6 +150,9 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('baa.rekap_mahasiswa')" :active="request()->routeIs('baa.rekap_mahasiswa*')">
                     {{ __('Rekap Mahasiswa') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('baa.laporan_pergantian')" :active="request()->routeIs('baa.laporan_pergantian*')">
+                    {{ __('Laporan') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('baa.periodes.index')" :active="request()->routeIs('baa.periodes.*')">
                     {{ __('Kelola Periode') }}

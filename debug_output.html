@@ -1,14 +1,38 @@
-<x-guest-layout>
-    <!-- Background Elements -->
+﻿<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="faEvvJYoQeiM3BbeZ6TCZ2a22q0maq6cABHC7GxT">
+
+        <title>Laravel</title>
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
+
+        <!-- Scripts & Styles (CDN for rapid development without Vite/Mix) -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <style>
+            body { font-family: 'Outfit', sans-serif; }
+            .glass {
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="font-sans text-gray-900 antialiased">
+            <!-- Background Elements -->
     <div class="fixed inset-0 z-0 bg-[#f8fafc] overflow-hidden">
         <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-300 mix-blend-multiply filter blur-[120px] opacity-70 animate-blob"></div>
         <div class="absolute top-[20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-300 mix-blend-multiply filter blur-[120px] opacity-70 animate-blob animation-delay-2000"></div>
         <div class="absolute bottom-[-20%] left-[20%] w-[50%] h-[50%] rounded-full bg-pink-300 mix-blend-multiply filter blur-[120px] opacity-70 animate-blob animation-delay-4000"></div>
     </div>
 
-    @include('layouts.public-navigation')
-
-    <div class="relative z-10 min-h-screen py-8 px-4 sm:px-6 lg:px-8 font-sans no-print" 
+    <div class="relative z-10 min-h-screen py-12 px-4 sm:px-6 lg:px-8 font-sans no-print" 
          x-data="{
              activeRequest: null,
              showModal: false,
@@ -27,33 +51,11 @@
                  this.isSuccess = false;
              },
              printReceipt() {
-                 if (this.activeRequest && this.activeRequest.id) {
-                     window.open('/schedules/request/' + this.activeRequest.id + '/print', '_blank');
-                 } else {
-                     window.print();
-                 }
+                 window.print();
              }
          }"
          @date-selected.window="clickedDateRaw = $event.detail.raw; clickedDateStr = $event.detail.formatted; showDateClickModal = true">
-          @if(false)
-         x-init="
-             @if($successRequest)
-                 openRequest({
-                     id: '{{ $successRequest->id }}',
-                     dosen: '{{ addslashes($successRequest->schedule->dosen->name ?? '-') }}',
-                     mata_kuliah: '{{ addslashes($successRequest->schedule->mata_kuliah) }}',
-                     kelas: '{{ addslashes($successRequest->schedule->kelas) }}',
-                     pertemuan: '{{ $successRequest->schedule->pertemuan }}',
-                     waktu_asli: '{{ \Carbon\Carbon::parse($successRequest->schedule->waktu_mulai)->format('l, d M Y (H:i)') }} - {{ \Carbon\Carbon::parse($successRequest->schedule->waktu_selesai)->format('H:i') }}',
-                     waktu_usulan: '{{ \Carbon\Carbon::parse($successRequest->waktu_mulai_usulan)->format('l, d M Y (H:i)') }} - {{ \Carbon\Carbon::parse($successRequest->waktu_selesai_usulan)->format('H:i') }}',
-                     ruangan: '{{ addslashes($successRequest->ruangan_usulan) }}',
-                     alasan: '{{ addslashes($successRequest->alasan) }}',
-                     status: '{{ $successRequest->status }}',
-                     catatan: '{{ addslashes($successRequest->catatan_kaprodi ?? '-') }}'
-                 }, true);
-             @endif
-         @endif
-        <div class="max-w-7xl mx-auto">
+                  <div class="max-w-7xl mx-auto">
             
             <!-- Header Section -->
             <div class="text-center mb-12">
@@ -61,82 +63,41 @@
                     Portal Akademik Terpadu
                 </span>
                 <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 via-purple-600 to-pink-600 tracking-tight sm:text-6xl mb-4 drop-shadow-sm">
-                    Manajemen Pergantian Jadwal
+                    Manajemen Jadwal Dosen
                 </h1>
                 <p class="mt-4 text-xl text-gray-600 max-w-2xl mx-auto font-light">
                     Sistem pemantauan kalender mengajar dan pengajuan jadwal pengganti secara *real-time*.
                 </p>
                 <div class="mt-6 flex flex-wrap justify-center gap-4 relative z-20">
-                    <a href="{{ route('public.cari_jadwal_kosong', ['dosen_id' => $selectedDosenId]) }}" class="inline-flex items-center px-6 py-2.5 bg-indigo-100 text-indigo-700 font-bold rounded-full hover:bg-indigo-200 transition-colors shadow-sm">
+                    <a href="http://127.0.0.1:8000/cari-jadwal-kosong?dosen_id=18" class="inline-flex items-center px-6 py-2.5 bg-indigo-100 text-indigo-700 font-bold rounded-full hover:bg-indigo-200 transition-colors shadow-sm">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         Cari Jadwal Ruangan Kosong
                     </a>
-                    <a href="{{ route('public.jadwal_ruangan') }}" class="inline-flex items-center px-6 py-2.5 bg-blue-100 text-blue-700 font-bold rounded-full hover:bg-blue-200 transition-colors shadow-sm">
+                    <a href="http://127.0.0.1:8000/jadwal-ruangan" class="inline-flex items-center px-6 py-2.5 bg-blue-100 text-blue-700 font-bold rounded-full hover:bg-blue-200 transition-colors shadow-sm">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                         Cek Jadwal Ruangan
                     </a>
-                    <a href="{{ route('public.kalender_akademik') }}" class="inline-flex items-center px-6 py-2.5 bg-purple-100 text-purple-700 font-bold rounded-full hover:bg-purple-200 transition-colors shadow-sm">
+                    <a href="http://127.0.0.1:8000/kalender-akademik" class="inline-flex items-center px-6 py-2.5 bg-purple-100 text-purple-700 font-bold rounded-full hover:bg-purple-200 transition-colors shadow-sm">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         Cek Kalender Akademik
                     </a>
                 </div>
             </div>
 
-            @if(session('success'))
-                <div class="mb-8 max-w-3xl mx-auto bg-white/80 backdrop-blur-md border border-green-200 p-5 rounded-2xl shadow-lg transform transition-all hover:scale-[1.01] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-green-100 p-2.5 rounded-full text-green-600">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-sm font-bold text-gray-900">Berhasil!</h3>
-                            <p class="text-sm text-gray-600 mt-1">{{ session('success') }}</p>
-                        </div>
-                    </div>
-                    @if($successRequest)
-                        @php
-                            $successData = [
-                                'id'           => $successRequest->id,
-                                'dosen'        => $successRequest->schedule->dosen->name ?? '-',
-                                'dosen_pengganti' => $successRequest->dosenPengganti->name ?? '-',
-                                'mata_kuliah'  => $successRequest->schedule->mata_kuliah,
-                                'kelas'        => $successRequest->schedule->kelas,
-                                'pertemuan'    => $successRequest->schedule->pertemuan,
-                                'waktu_asli'   => \Carbon\Carbon::parse($successRequest->schedule->waktu_mulai)->format('l, d M Y (H:i)') . ' - ' . \Carbon\Carbon::parse($successRequest->schedule->waktu_selesai)->format('H:i'),
-                                'waktu_usulan' => \Carbon\Carbon::parse($successRequest->waktu_mulai_usulan)->format('l, d M Y (H:i)') . ' - ' . \Carbon\Carbon::parse($successRequest->waktu_selesai_usulan)->format('H:i'),
-                                'ruangan'      => $successRequest->ruangan_usulan ?? '-',
-                                'alasan'       => $successRequest->alasan ?? '-',
-                                'status'       => $successRequest->status,
-                                'catatan'      => $successRequest->catatan_kaprodi ?? '-',
-                            ];
-                        @endphp
-                        <button @click="openRequest(JSON.parse(atob('{{ base64_encode(json_encode($successData)) }}')), true)" class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-xs font-bold text-white rounded-xl shadow-md transition-all transform hover:-translate-y-0.5">
-                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm5-14V7a2 2 0 00-2-2H9a2 2 0 00-2 2v3h6z"></path></svg>
-                            Lihat & Cetak Bukti
-                        </button>
-                    @endif
-                </div>
-            @endif
-
+            
             <!-- Filter Panel (Glassmorphism) -->
             <div class="bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-10 border border-white/40 relative z-20">
                 <div class="p-8">
-                    <form method="GET" action="{{ route('schedules.public') }}" 
+                    <form method="GET" action="http://127.0.0.1:8000" 
                           x-data="{ 
                               selectedProdi: '',
                               open: false, 
                               search: '', 
-                              selectedId: '{{ $selectedDosenId }}', 
+                              selectedId: '18', 
                               selectedName: 'Pilih Nama Dosen...' 
                           }" 
                           x-init="
-                              @if($selectedDosenId)
-                                  @php $d = $dosens->firstWhere('id', $selectedDosenId); @endphp
-                                  @if($d) selectedName = '{{ addslashes($d->name) }}'; selectedProdi = '{{ $d->prodi_id }}'; @endif
-                              @endif
-                          "
+                                                                                                   selectedName = 'Adang Kurniawan, M.Kom.'; selectedProdi = '5';                                                         "
                           class="flex flex-col md:flex-row gap-6 items-end">
                         
                         <!-- Filter Prodi -->
@@ -145,10 +106,16 @@
                             <div class="relative">
                                 <select x-model="selectedProdi" @change="selectedId = ''; selectedName = 'Pilih Nama Dosen...'" class="appearance-none w-full bg-white/80 border border-gray-200/80 rounded-2xl shadow-sm pl-5 pr-10 py-4 text-base font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all hover:bg-white cursor-pointer">
                                     <option value="">Semua Prodi</option>
-                                    @foreach($prodis as $p)
-                                        <option value="{{ $p->id }}">{{ $p->name }}</option>
-                                    @endforeach
-                                </select>
+                                                                            <option value="7">D1 - Modul</option>
+                                                                            <option value="6">D3 - Administrasi Bisnis</option>
+                                                                            <option value="4">D3 - Akuntansi</option>
+                                                                            <option value="9">D3 - Komputerisasi Akuntansi</option>
+                                                                            <option value="5">S1 - Administrasi Bisnis</option>
+                                                                            <option value="3">S1 - Akuntansi</option>
+                                                                            <option value="2">S1 - Sistem Informasi</option>
+                                                                            <option value="1">S1 - Teknik Informatika</option>
+                                                                            <option value="8">Umum</option>
+                                                                    </select>
                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-indigo-400">
                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
@@ -163,14 +130,272 @@
                                 <select @change="selectedId = $event.target.value; selectedName = $event.target.options[$event.target.selectedIndex].text" 
                                         class="appearance-none w-full bg-white/80 border border-gray-200/80 rounded-2xl shadow-sm pl-5 pr-10 py-4 text-base font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all hover:bg-white cursor-pointer">
                                     <option value="">Pilih Nama Dosen...</option>
-                                    @foreach($dosens as $dosen)
-                                        <option value="{{ $dosen->id }}" 
-                                                x-show="selectedProdi === '' || {{ $dosen->taught_prodi_ids->toJson() }}.some(id => id == selectedProdi)"
-                                                :selected="selectedId == '{{ $dosen->id }}'">
-                                            {{ $dosen->name }}
+                                                                            <option value="18" 
+                                                x-show="selectedProdi === '' || [5,3,6,2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '18'">
+                                            Adang Kurniawan, M.Kom.
                                         </option>
-                                    @endforeach
-                                </select>
+                                                                            <option value="15" 
+                                                x-show="selectedProdi === '' || [5,3,1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '15'">
+                                            Ade Oki Pebiansyah, S.T., M.M
+                                        </option>
+                                                                            <option value="53" 
+                                                x-show="selectedProdi === '' || [1,2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '53'">
+                                            Adi Suwarno, S.Kom., M.Kom.
+                                        </option>
+                                                                            <option value="12" 
+                                                x-show="selectedProdi === '' || [5,6].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '12'">
+                                            Adil Musty Tamzil, S.E., M.M.
+                                        </option>
+                                                                            <option value="38" 
+                                                x-show="selectedProdi === '' || [3].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '38'">
+                                            AHMAD NUKMAN GINANJAR
+                                        </option>
+                                                                            <option value="26" 
+                                                x-show="selectedProdi === '' || [5,1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '26'">
+                                            ANDRE SETIAWAN INDRA
+                                        </option>
+                                                                            <option value="52" 
+                                                x-show="selectedProdi === '' || [1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '52'">
+                                            ANDY VICTOR PAKPAHAN, M.T.
+                                        </option>
+                                                                            <option value="23" 
+                                                x-show="selectedProdi === '' || [5,6,1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '23'">
+                                            ANUM DAHLIA, S.S., M.Hum.
+                                        </option>
+                                                                            <option value="28" 
+                                                x-show="selectedProdi === '' || [5,3,1,2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '28'">
+                                            Cindy Sri Meidina Adeliani, S.Pd., S.S., M.Pd.
+                                        </option>
+                                                                            <option value="47" 
+                                                x-show="selectedProdi === '' || [7,1,2,8].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '47'">
+                                            Dayanni Vera Versanika, S.T., M.Kom.
+                                        </option>
+                                                                            <option value="24" 
+                                                x-show="selectedProdi === '' || [5,3,6].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '24'">
+                                            DEDE ISMAIL, S.S., M.Hum.
+                                        </option>
+                                                                            <option value="25" 
+                                                x-show="selectedProdi === '' || [5,3,7,6,2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '25'">
+                                            Deden Sofyan Hamdani, M.T.
+                                        </option>
+                                                                            <option value="60" 
+                                                x-show="selectedProdi === '' || [1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '60'">
+                                            DONI, M.T.
+                                        </option>
+                                                                            <option value="16" 
+                                                x-show="selectedProdi === '' || [5,3,1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '16'">
+                                            Dr ANNI YULIAH, S.Sos., M.Si.
+                                        </option>
+                                                                            <option value="11" 
+                                                x-show="selectedProdi === '' || [5].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '11'">
+                                            Dr BERTHA MUSTY, M.M
+                                        </option>
+                                                                            <option value="41" 
+                                                x-show="selectedProdi === '' || [3,9].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '41'">
+                                            Dr Junaedi Abdillah, S.T., M.Ak.
+                                        </option>
+                                                                            <option value="35" 
+                                                x-show="selectedProdi === '' || [3,1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '35'">
+                                            Dr MUSTAKIM RIJA, S.S., M.Hum
+                                        </option>
+                                                                            <option value="50" 
+                                                x-show="selectedProdi === '' || [1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '50'">
+                                            Dr. Neng Susi Susilawati Sugiana, S.Kom., M.M.
+                                        </option>
+                                                                            <option value="32" 
+                                                x-show="selectedProdi === '' || [3].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '32'">
+                                            Drs. Muhtarudin, M.M.
+                                        </option>
+                                                                            <option value="43" 
+                                                x-show="selectedProdi === '' || [3,6,2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '43'">
+                                            ELIZA VIANDRAYANI AZIZ, S.T., M.M
+                                        </option>
+                                                                            <option value="17" 
+                                                x-show="selectedProdi === '' || [5,3].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '17'">
+                                            Ervie Nur Afifa Mukhlis, S.E., M.A.B.
+                                        </option>
+                                                                            <option value="45" 
+                                                x-show="selectedProdi === '' || [3,9].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '45'">
+                                            ETI SUPRIHATIN, S.E., M.Ak.
+                                        </option>
+                                                                            <option value="61" 
+                                                x-show="selectedProdi === '' || [2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '61'">
+                                            FELIX FERDIAN, M. Kom.
+                                        </option>
+                                                                            <option value="49" 
+                                                x-show="selectedProdi === '' || [1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '49'">
+                                            Gelar Aditya Pratama, S.T., M.Kom.
+                                        </option>
+                                                                            <option value="36" 
+                                                x-show="selectedProdi === '' || [3].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '36'">
+                                            HAMIDAH, S.E., M.Ak.
+                                        </option>
+                                                                            <option value="54" 
+                                                x-show="selectedProdi === '' || [1,2,8].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '54'">
+                                            HASAN BALUBITA, M.Kom
+                                        </option>
+                                                                            <option value="37" 
+                                                x-show="selectedProdi === '' || [3].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '37'">
+                                            Hendi Kurnia Permana, S.E., M.Ak.
+                                        </option>
+                                                                            <option value="42" 
+                                                x-show="selectedProdi === '' || [3,1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '42'">
+                                            Ihda Farhatun Nisak, S.Pd., M.M.
+                                        </option>
+                                                                            <option value="34" 
+                                                x-show="selectedProdi === '' || [3,6].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '34'">
+                                            IMAS ANGGRAENI, S.T., M.M
+                                        </option>
+                                                                            <option value="57" 
+                                                x-show="selectedProdi === '' || [1,2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '57'">
+                                            INDRA PURNAMA, S.Sos., M.T.
+                                        </option>
+                                                                            <option value="31" 
+                                                x-show="selectedProdi === '' || [3,6].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '31'">
+                                            JANADI RAMMELSBERGI THAMRIN, S.PT., M.M.
+                                        </option>
+                                                                            <option value="19" 
+                                                x-show="selectedProdi === '' || [5,6,1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '19'">
+                                            JENNIFER YUNANI
+                                        </option>
+                                                                            <option value="48" 
+                                                x-show="selectedProdi === '' || [1,2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '48'">
+                                            JOHANNES TRIANGKA SETIADJI
+                                        </option>
+                                                                            <option value="30" 
+                                                x-show="selectedProdi === '' || [3].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '30'">
+                                            Kiki Kusumayadi, M.Ak.
+                                        </option>
+                                                                            <option value="46" 
+                                                x-show="selectedProdi === '' || [3,1,2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '46'">
+                                            Memet Sanjaya, S.Kom., M.A.
+                                        </option>
+                                                                            <option value="59" 
+                                                x-show="selectedProdi === '' || [1,2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '59'">
+                                            Muhammad Eko Utomo, S.T., M.M.
+                                        </option>
+                                                                            <option value="58" 
+                                                x-show="selectedProdi === '' || [1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '58'">
+                                            OFFY SHOLEHATUN
+                                        </option>
+                                                                            <option value="13" 
+                                                x-show="selectedProdi === '' || [5,3].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '13'">
+                                            REMA KARYANTI SOENENDAR
+                                        </option>
+                                                                            <option value="56" 
+                                                x-show="selectedProdi === '' || [1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '56'">
+                                            Renol Burjulius, S.T., S.H., M.H., M.Kom.
+                                        </option>
+                                                                            <option value="14" 
+                                                x-show="selectedProdi === '' || [5].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '14'">
+                                            Rini Ratnaningsih, S.Sos., M.M.
+                                        </option>
+                                                                            <option value="40" 
+                                                x-show="selectedProdi === '' || [3,2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '40'">
+                                            SANTA YUSUF NASUTION, M.Sc
+                                        </option>
+                                                                            <option value="51" 
+                                                x-show="selectedProdi === '' || [1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '51'">
+                                            SIHAR N.M.P. SIMAMORA, M.T.
+                                        </option>
+                                                                            <option value="44" 
+                                                x-show="selectedProdi === '' || [3,1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '44'">
+                                            SITTI NURRACHMAH
+                                        </option>
+                                                                            <option value="55" 
+                                                x-show="selectedProdi === '' || [1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '55'">
+                                            Sonty Lena, S.Kom., M.M., M.Kom.
+                                        </option>
+                                                                            <option value="62" 
+                                                x-show="selectedProdi === '' || [2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '62'">
+                                            SRI KURNIASIH
+                                        </option>
+                                                                            <option value="21" 
+                                                x-show="selectedProdi === '' || [5,2].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '21'">
+                                            SYAEPUDIN
+                                        </option>
+                                                                            <option value="39" 
+                                                x-show="selectedProdi === '' || [3,1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '39'">
+                                            Syahrul Septian Zein, S.Mat., M.Pd.
+                                        </option>
+                                                                            <option value="22" 
+                                                x-show="selectedProdi === '' || [5,3,6,1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '22'">
+                                            Tengku Ine Hendriana, S.Pd., M.M.
+                                        </option>
+                                                                            <option value="10" 
+                                                x-show="selectedProdi === '' || [5,7,6].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '10'">
+                                            TINI MARTINI
+                                        </option>
+                                                                            <option value="29" 
+                                                x-show="selectedProdi === '' || [5,6].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '29'">
+                                            TJANG KIAN LIONG, Drs., M.M.
+                                        </option>
+                                                                            <option value="20" 
+                                                x-show="selectedProdi === '' || [5,6].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '20'">
+                                            TUTI SULASTRI, S.Pd., M.M.
+                                        </option>
+                                                                            <option value="27" 
+                                                x-show="selectedProdi === '' || [5,6,9,1].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '27'">
+                                            WAHYU NURJAYA WK, S.T., M.Kom.
+                                        </option>
+                                                                            <option value="33" 
+                                                x-show="selectedProdi === '' || [3,6].some(id => id == selectedProdi)"
+                                                :selected="selectedId == '33'">
+                                            WENNY DJUARNI
+                                        </option>
+                                                                    </select>
                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-indigo-400">
                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
@@ -183,10 +408,9 @@
                             <div class="relative">
                                 <select name="periode" class="appearance-none w-full bg-white/80 border border-gray-200/80 rounded-2xl shadow-sm pl-5 pr-10 py-4 text-base font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all hover:bg-white cursor-pointer">
                                     <option value="">Semua Periode</option>
-                                    @foreach($periodes as $p)
-                                        <option value="{{ $p }}" {{ $selectedPeriode == $p ? 'selected' : '' }}>{{ $p }}</option>
-                                    @endforeach
-                                </select>
+                                                                            <option value="2026 Ganjil" >2026 Ganjil</option>
+                                                                            <option value="2025 Genap" selected>2025 Genap</option>
+                                                                    </select>
                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-indigo-400">
                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
@@ -205,8 +429,7 @@
             </div>
 
             <!-- Calendar UI -->
-            @if($selectedDosenId)
-                <div class="mb-6 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center shadow-sm">
+                            <div class="mb-6 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center shadow-sm">
                     <div class="flex-shrink-0 bg-indigo-500 p-2 rounded-full text-white mr-4">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
@@ -253,17 +476,11 @@
                                 <h2 class="text-2xl font-black text-gray-900 tracking-tight">Riwayat Pengajuan Pergantian</h2>
                             </div>
                             <span class="bg-indigo-100 text-indigo-800 text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider">
-                                {{ $historyRequests->count() }} Pengajuan
+                                2 Pengajuan
                             </span>
                         </div>
 
-                        @if($historyRequests->isEmpty())
-                            <div class="text-center py-10 bg-white/30 rounded-2xl border border-dashed border-gray-205">
-                                <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <p class="text-gray-500 font-medium">Belum ada riwayat pengajuan pergantian jadwal untuk dosen ini.</p>
-                            </div>
-                        @else
-                            <div class="overflow-x-auto rounded-2xl border border-gray-100 bg-white/40">
+                                                    <div class="overflow-x-auto rounded-2xl border border-gray-100 bg-white/40">
                                 <table class="w-full text-left border-collapse">
                                     <thead>
                                         <tr class="bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-widest">
@@ -276,55 +493,32 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100/50 text-sm font-semibold text-gray-700">
-                                        @foreach($historyRequests as $req)
-                                            @php
-                                                $reqData = [
-                                                    'id'           => $req->id,
-                                                    'dosen'        => $req->schedule->dosen->name ?? '-',
-                                                    'dosen_pengganti' => $req->dosenPengganti->name ?? '-',
-                                                    'mata_kuliah'  => $req->schedule->mata_kuliah,
-                                                    'kelas'        => $req->schedule->kelas,
-                                                    'pertemuan'    => $req->schedule->pertemuan,
-                                                    'waktu_asli'   => \Carbon\Carbon::parse($req->schedule->waktu_mulai)->translatedFormat('l, d M Y (H:i)') . ' - ' . \Carbon\Carbon::parse($req->schedule->waktu_selesai)->format('H:i'),
-                                                    'waktu_usulan' => \Carbon\Carbon::parse($req->waktu_mulai_usulan)->translatedFormat('l, d M Y (H:i)') . ' - ' . \Carbon\Carbon::parse($req->waktu_selesai_usulan)->format('H:i'),
-                                                    'ruangan'      => $req->ruangan_usulan ?? '-',
-                                                    'alasan'       => $req->alasan ?? '-',
-                                                    'status'       => $req->status,
-                                                    'catatan'      => $req->catatan_kaprodi ?? '-',
-                                                ];
-                                                $statusColors = [
-                                                    'Pending'   => 'bg-yellow-100 text-yellow-800 border border-yellow-200',
-                                                    'Disetujui' => 'bg-green-100 text-green-800 border border-green-200',
-                                                    'Ditolak'   => 'bg-red-100 text-red-800 border border-red-200',
-                                                ];
-                                                $statusCls = $statusColors[$req->status] ?? 'bg-gray-100 text-gray-700 border border-gray-200';
-                                            @endphp
-                                            <tr class="hover:bg-white/40 transition-colors">
+                                                                                                                                <tr class="hover:bg-white/40 transition-colors">
                                                 <td class="py-4 px-6">
-                                                    <div class="font-bold text-gray-900">{{ $req->schedule->mata_kuliah }}</div>
-                                                    <div class="text-xs text-gray-400 mt-0.5">Kelas {{ $req->schedule->kelas }} • Pertemuan {{ $req->schedule->pertemuan }}</div>
+                                                    <div class="font-bold text-gray-900">2PR02020 - Seminar Sistem Informasi Akuntansi (2 SKS)</div>
+                                                    <div class="text-xs text-gray-400 mt-0.5">Kelas 4AK • Pertemuan 9</div>
                                                 </td>
                                                 <td class="py-4 px-6 text-xs text-gray-500">
-                                                    {{ \Carbon\Carbon::parse($req->schedule->waktu_mulai)->translatedFormat('l, d M Y') }}
+                                                    Thursday, 21 May 2026
                                                     <br>
-                                                    <span class="font-bold text-gray-700">{{ \Carbon\Carbon::parse($req->schedule->waktu_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($req->schedule->waktu_selesai)->format('H:i') }}</span>
+                                                    <span class="font-bold text-gray-700">15:40 - 17:50</span>
                                                 </td>
                                                 <td class="py-4 px-6 text-xs text-purple-950">
-                                                    {{ \Carbon\Carbon::parse($req->waktu_mulai_usulan)->translatedFormat('l, d M Y') }}
+                                                    Monday, 25 May 2026
                                                     <br>
-                                                    <span class="font-extrabold text-purple-700">{{ \Carbon\Carbon::parse($req->waktu_mulai_usulan)->format('H:i') }} - {{ \Carbon\Carbon::parse($req->waktu_selesai_usulan)->format('H:i') }}</span>
+                                                    <span class="font-extrabold text-purple-700">08:00 - 10:00</span>
                                                 </td>
-                                                <td class="py-4 px-6 text-gray-900">{{ $req->ruangan_usulan ?? '-' }}</td>
+                                                <td class="py-4 px-6 text-gray-900">Ruang 102</td>
                                                 <td class="py-4 px-6 text-center">
-                                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide {{ $statusCls }}">
-                                                        {{ $req->status }}
+                                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-green-100 text-green-800 border border-green-200">
+                                                        Disetujui
                                                     </span>
                                                 </td>
                                                 <td class="py-4 px-6 text-right">
-                                                    {{-- Gunakan Base64 agar 100% kompatibel di semua versi Laravel dan bebas error karakter khusus --}}
+                                                    
                                                     <button
                                                         type="button"
-                                                        x-on:click="openRequest(JSON.parse(atob('{{ base64_encode(json_encode($reqData)) }}')))"
+                                                        x-on:click="openRequest(JSON.parse(atob('eyJpZCI6MiwiZG9zZW4iOiJBZGFuZyBLdXJuaWF3YW4sIE0uS29tLiIsIm1hdGFfa3VsaWFoIjoiMlBSMDIwMjAgLSBTZW1pbmFyIFNpc3RlbSBJbmZvcm1hc2kgQWt1bnRhbnNpICgyIFNLUykiLCJrZWxhcyI6IjRBSyIsInBlcnRlbXVhbiI6OSwid2FrdHVfYXNsaSI6IlRodXJzZGF5LCAyMSBNYXkgMjAyNiAoMTU6NDApIC0gMTc6NTAiLCJ3YWt0dV91c3VsYW4iOiJNb25kYXksIDI1IE1heSAyMDI2ICgwODowMCkgLSAxMDowMCIsInJ1YW5nYW4iOiJSdWFuZyAxMDIiLCJhbGFzYW4iOiJTYXlhIFNpYnVrIGphZGkgc2F5YSBpbmdpbiBtYXRhIGt1bGlhaCBzZXNpIHNheWEgZGlwYWp1a2FuIGtodXN1cyB1bnR1ayBzYXlhIiwic3RhdHVzIjoiRGlzZXR1anVpIiwiY2F0YXRhbiI6IlNheWEgSXppbmthbiBBc2FsIG1lbWFuZyBNZW1lbnVoaSBhcGEgeWFuZyBtZW5qYWRpIGtld2FqaWJhbiBiYXBhayBkYWxhbSBiZXJ0dWdhcyJ9')))"
                                                         class="inline-flex items-center px-4 py-2 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-xs font-bold rounded-xl text-indigo-600 transition-all transform hover:scale-[1.03]">
                                                         <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -334,40 +528,58 @@
                                                     </button>
                                                 </td>
                                             </tr>
-                                        @endforeach
-                                    </tbody>
+                                                                                                                                <tr class="hover:bg-white/40 transition-colors">
+                                                <td class="py-4 px-6">
+                                                    <div class="font-bold text-gray-900">1BS06002 - Sistem Basis Data (2 SKS)</div>
+                                                    <div class="text-xs text-gray-400 mt-0.5">Kelas 2AKKA • Pertemuan 9</div>
+                                                </td>
+                                                <td class="py-4 px-6 text-xs text-gray-500">
+                                                    Saturday, 23 May 2026
+                                                    <br>
+                                                    <span class="font-bold text-gray-700">12:10 - 14:20</span>
+                                                </td>
+                                                <td class="py-4 px-6 text-xs text-purple-950">
+                                                    Wednesday, 20 May 2026
+                                                    <br>
+                                                    <span class="font-extrabold text-purple-700">08:00 - 10:00</span>
+                                                </td>
+                                                <td class="py-4 px-6 text-gray-900">R. 210</td>
+                                                <td class="py-4 px-6 text-center">
+                                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-red-100 text-red-800 border border-red-200">
+                                                        Ditolak
+                                                    </span>
+                                                </td>
+                                                <td class="py-4 px-6 text-right">
+                                                    
+                                                    <button
+                                                        type="button"
+                                                        x-on:click="openRequest(JSON.parse(atob('eyJpZCI6MSwiZG9zZW4iOiJBZGFuZyBLdXJuaWF3YW4sIE0uS29tLiIsIm1hdGFfa3VsaWFoIjoiMUJTMDYwMDIgLSBTaXN0ZW0gQmFzaXMgRGF0YSAoMiBTS1MpIiwia2VsYXMiOiIyQUtLQSIsInBlcnRlbXVhbiI6OSwid2FrdHVfYXNsaSI6IlNhdHVyZGF5LCAyMyBNYXkgMjAyNiAoMTI6MTApIC0gMTQ6MjAiLCJ3YWt0dV91c3VsYW4iOiJXZWRuZXNkYXksIDIwIE1heSAyMDI2ICgwODowMCkgLSAxMDowMCIsInJ1YW5nYW4iOiJSLiAyMTAiLCJhbGFzYW4iOiJTYXlhIFNpYnVrIGphZGkgc2F5YSBpbmdpbiBtYXRhIGt1bGlhaCBzZXNpIHNheWEgZGlwYWp1a2FuIGtodXN1cyB1bnR1ayBzYXlhIiwic3RhdHVzIjoiRGl0b2xhayIsImNhdGF0YW4iOiJ0aWRhayBkaWl6aW5rYW4gdGlkYWsgc2VzdWFpIGtldGVudHVhbiJ9')))"
+                                                        class="inline-flex items-center px-4 py-2 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-xs font-bold rounded-xl text-indigo-600 transition-all transform hover:scale-[1.03]">
+                                                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                        </svg>
+                                                        Detail & Cetak
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                                                            </tbody>
                                 </table>
                             </div>
-                        @endif
-                    </div>
+                                            </div>
                 </div>
-            @else
-                <div class="text-center py-24 bg-white/40 backdrop-blur-xl rounded-[2rem] shadow-sm border border-white/50 relative overflow-hidden group">
-                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-white/20"></div>
-                    <div class="relative flex flex-col items-center">
-                        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-[0_10px_40px_-10px_rgba(79,70,229,0.3)] mb-6 group-hover:scale-110 transition-transform duration-500">
-                            <svg class="h-10 w-10 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Pilih Dosen Terlebih Dahulu</h3>
-                        <p class="text-gray-500 max-w-md mx-auto">Silakan pilih nama dosen dan rentang periode pada panel di atas untuk menampilkan kalender jadwal secara interaktif.</p>
-                    </div>
-                </div>
-            @endif
-
+            
         </div>
     </div>
 
-    @if($selectedDosenId)
-    <!-- FullCalendar Scripts -->
+        <!-- FullCalendar Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', async function() {
         var calendarEl = document.getElementById('calendar');
         
         // Fetch events first to determine initialDate
-        const response = await fetch('/api/schedules?dosen_id={{ $selectedDosenId }}&periode={{ $selectedPeriode }}');
+        const response = await fetch('/api/schedules?dosen_id=18&periode=2025 Genap');
         const eventsData = await response.json();
         
         let initialDate = new Date(); // default today
@@ -445,8 +657,7 @@
       });
     </script>
 
-    @endif
-    
+        
         <!-- Elegant Glassmorphism Modal for Request Details & Printing -->
         <div x-show="showModal" 
              x-transition:enter="transition ease-out duration-300"
@@ -465,7 +676,7 @@
                 <div class="hidden print:block text-center border-b-2 border-dashed border-gray-300 pb-6 mb-6">
                     <h2 class="text-2xl font-black text-gray-900 tracking-tight">LPKIA ACADEMIC PORTAL</h2>
                     <p class="text-sm font-bold text-gray-500 uppercase tracking-widest mt-1">Bukti Pengajuan Pergantian Jadwal</p>
-                    <div class="text-xs text-gray-400 mt-2">Dicetak pada: {{ date('d M Y H:i:s') }}</div>
+                    <div class="text-xs text-gray-400 mt-2">Dicetak pada: 19 May 2026 09:50:23</div>
                 </div>
 
                 <!-- Modal Top Accent Gradient (hidden on print) -->
@@ -519,10 +730,6 @@
                                           }"
                                           x-text="activeRequest?.status"></span>
                                 </div>
-                                <div class="col-span-2 mt-2" x-show="activeRequest?.dosen_pengganti && activeRequest?.dosen_pengganti !== '-'">
-                                    <span class="block text-xs font-bold text-gray-400 uppercase tracking-widest">Dosen Pengganti</span>
-                                    <span class="text-base font-black text-teal-700" x-text="activeRequest?.dosen_pengganti"></span>
-                                </div>
                             </div>
                             <div class="mt-4 border-t border-indigo-100/30 pt-4 print:border-gray-200">
                                 <span class="block text-xs font-bold text-gray-400 uppercase tracking-widest">Mata Kuliah & Kelas</span>
@@ -573,7 +780,7 @@
                     <div class="hidden print:block mt-12 border-t border-dashed border-gray-300 pt-6">
                         <div class="flex justify-between text-xs text-gray-400">
                             <span>Sistem Pergantian Jadwal Dosen</span>
-                            <span>LPKIA © {{ date('Y') }}</span>
+                            <span>LPKIA © 2026</span>
                         </div>
                     </div>
 
@@ -623,7 +830,7 @@
                                 class="w-full sm:w-1/2 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition duration-150 text-center">
                             Batal
                         </button>
-                        <a :href="'/schedules/request/new?date=' + encodeURIComponent(clickedDateRaw) + '&dosen_id={{ $selectedDosenId }}'"
+                        <a :href="'/schedules/request/new?date=' + encodeURIComponent(clickedDateRaw) + '&dosen_id=18'"
                            class="w-full sm:w-1/2 py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-2xl transition duration-150 text-center shadow-lg hover:shadow-indigo-500/20">
                             Ya, Ajukan!
                         </a>
@@ -632,10 +839,10 @@
             </div>
 
         </div>
-
+    </div>
 
     <style>
-        @keyframes blob {
+        @keyframes  blob {
             0% { transform: translate(0px, 0px) scale(1); }
             33% { transform: translate(30px, -50px) scale(1.1); }
             66% { transform: translate(-20px, 20px) scale(0.9); }
@@ -651,7 +858,7 @@
             animation-delay: 4s;
         }
 
-        @media print {
+        @media  print {
             body {
                 background: white !important;
                 color: black !important;
@@ -695,40 +902,7 @@
             }
         }
     </style>
-    @if($successRequest)
-    <script>
-        (function() {
-            @php
-                $successData = [
-                    'id'           => $successRequest->id,
-                    'dosen'        => $successRequest->schedule->dosen->name ?? '-',
-                    'mata_kuliah'  => $successRequest->schedule->mata_kuliah,
-                    'kelas'        => $successRequest->schedule->kelas,
-                    'pertemuan'    => $successRequest->schedule->pertemuan,
-                    'waktu_asli'   => \Carbon\Carbon::parse($successRequest->schedule->waktu_mulai)->format('l, d M Y (H:i)') . ' - ' . \Carbon\Carbon::parse($successRequest->schedule->waktu_selesai)->format('H:i'),
-                    'waktu_usulan' => \Carbon\Carbon::parse($successRequest->waktu_mulai_usulan)->format('l, d M Y (H:i)') . ' - ' . \Carbon\Carbon::parse($successRequest->waktu_selesai_usulan)->format('H:i'),
-                    'ruangan'      => $successRequest->ruangan_usulan ?? '-',
-                    'alasan'       => $successRequest->alasan ?? '-',
-                    'status'       => $successRequest->status,
-                    'catatan'      => $successRequest->catatan_kaprodi ?? '-',
-                ];
-            @endphp
-            
-            function tryOpen() {
-                const root = document.querySelector('[x-data]');
-                if (root && window.Alpine) {
-                    window.Alpine.$data(root).openRequest(JSON.parse(atob('{{ base64_encode(json_encode($successData)) }}')), true);
-                } else {
-                    setTimeout(tryOpen, 50);
-                }
-            }
-            
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', tryOpen);
-            } else {
-                tryOpen();
-            }
-        })();
-    </script>
-    @endif
-</x-guest-layout>
+        </div>
+    </body>
+</html>
+

@@ -42,8 +42,8 @@ class PublicController extends Controller
     public function cariJadwalKosong(Request $request)
     {
         $date = $request->get('date');
-        $startTime = $request->get('start_time', '07:00');
-        $endTime = $request->get('end_time', '18:00');
+        $startTime = $request->get('start_time', '07:30');
+        $endTime = $request->get('end_time', '09:40');
         
         $roomsStatus = [];
         
@@ -66,6 +66,39 @@ class PublicController extends Controller
                 ->with(['schedule.dosen'])
                 ->get();
                 
+            $groupedRoomsStatus = [
+                'r100' => [
+                    'title' => 'Ruang Teori Lantai 1 (R. 100)',
+                    'description' => 'Kelas reguler teori lantai 1',
+                    'icon' => '🏛️',
+                    'rooms' => []
+                ],
+                'r200' => [
+                    'title' => 'Ruang Teori Lantai 2 (R. 200)',
+                    'description' => 'Kelas reguler teori lantai 2 (Monitoring R. 200)',
+                    'icon' => '🏢',
+                    'rooms' => []
+                ],
+                'r300' => [
+                    'title' => 'Ruang Teori Lantai 3 (R. 300)',
+                    'description' => 'Kelas reguler teori lantai 3 (Monitoring R. 300)',
+                    'icon' => '🏫',
+                    'rooms' => []
+                ],
+                'labkom' => [
+                    'title' => 'Laboratorium Komputer (Labkom / R. 201 & 300 Series Labs)',
+                    'description' => 'Ruang praktikum komputer, perkantoran, basis data, aplikasi, pemrograman, multimedia',
+                    'icon' => '💻',
+                    'rooms' => []
+                ],
+                'other' => [
+                    'title' => 'Fasilitas Lainnya & Online',
+                    'description' => 'Aula utama dan kelas pembelajaran daring',
+                    'icon' => '🌐',
+                    'rooms' => []
+                ],
+            ];
+                
             foreach ($rooms as $room) {
                 $isUsed = false;
                 $occupiedBy = null;
@@ -80,7 +113,7 @@ class PublicController extends Controller
                         if ($slotStart->lt($schedEnd) && $slotEnd->gt($schedStart)) {
                             $isUsed = true;
                             $occupiedBy = [
-                                'type' => 'REGULER',
+                                'type' => 'Jadwal Reguler',
                                 'dosen' => $s->dosen->name ?? 'Dosen',
                                 'mata_kuliah' => $s->mata_kuliah,
                                 'kelas' => $s->kelas,
@@ -102,7 +135,7 @@ class PublicController extends Controller
                             if ($slotStart->lt($reqEnd) && $slotEnd->gt($reqStart)) {
                                 $isUsed = true;
                                 $occupiedBy = [
-                                    'type' => 'PENGGANTI',
+                                    'type' => 'Pengganti (' . $req->status . ')',
                                     'dosen' => $req->schedule->dosen->name ?? $req->pengaju_nama ?? 'Dosen',
                                     'mata_kuliah' => $req->schedule->mata_kuliah,
                                     'kelas' => $req->schedule->kelas,
@@ -114,14 +147,44 @@ class PublicController extends Controller
                     }
                 }
                 
-                $roomsStatus[] = [
+                $statusItem = [
                     'room' => $room,
                     'is_available' => !$isUsed,
                     'occupied_by' => $occupiedBy,
                 ];
+                
+                $name = $room->name;
+                if (stripos($name, 'lab') !== false || stripos($name, 'laboratorium') !== false) {
+                    $groupedRoomsStatus['labkom']['rooms'][] = $statusItem;
+                } elseif (preg_match('/Teori\s+1\d+/i', $name)) {
+                    $groupedRoomsStatus['r100']['rooms'][] = $statusItem;
+                } elseif (preg_match('/Teori\s+2\d+/i', $name)) {
+                    $groupedRoomsStatus['r200']['rooms'][] = $statusItem;
+                } elseif (preg_match('/Teori\s+3\d+/i', $name)) {
+                    $groupedRoomsStatus['r300']['rooms'][] = $statusItem;
+                } else {
+                    $groupedRoomsStatus['other']['rooms'][] = $statusItem;
+                }
             }
+
+            // Calculate totals and statistics
+            foreach ($groupedRoomsStatus as $key => $cat) {
+                $total = count($cat['rooms']);
+                $available = 0;
+                foreach ($cat['rooms'] as $item) {
+                    if ($item['is_available']) {
+                        $available++;
+                    }
+                }
+                $groupedRoomsStatus[$key]['total'] = $total;
+                $groupedRoomsStatus[$key]['available'] = $available;
+                $groupedRoomsStatus[$key]['occupied'] = $total - $available;
+            }
+            
+            $roomsStatus = $groupedRoomsStatus;
         }
         
-        return view('public.cari-jadwal', compact('date', 'startTime', 'endTime', 'roomsStatus'));
+        $dosens = \App\Models\User::where('role', 'dosen')->orderBy('name')->get();
+        return view('public.cari-jadwal', compact('date', 'startTime', 'endTime', 'roomsStatus', 'dosens'));
     }
 }

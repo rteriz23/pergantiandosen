@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+// Note: no explicit use needed — Laravel resolves same-namespace models automatically
 
 class Schedule extends Model
 {
@@ -41,5 +42,20 @@ class Schedule extends Model
     public function room()
     {
         return $this->belongsTo(Room::class);
+    }
+
+    public function scheduleRequests()
+    {
+        return $this->hasMany(ScheduleRequest::class);
+    }
+
+    public function presensi()
+    {
+        return $this->hasMany(PresensiDosen::class);
+    }
+
+    public function mahasiswaEnrollments()
+    {
+        return $this->hasMany(MahasiswaJadwal::class);
     }
 }

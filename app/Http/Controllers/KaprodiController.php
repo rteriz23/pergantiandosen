@@ -59,15 +59,17 @@ class KaprodiController extends Controller
             $schedule->status = 'Diganti';
             $schedule->save();
             Schedule::create([
-                'user_id'      => $schedule->user_id,
-                'prodi_id'     => $schedule->prodi_id,
-                'periode'      => $schedule->periode,
-                'mata_kuliah'  => $schedule->mata_kuliah,
-                'kelas'        => $schedule->kelas,
-                'pertemuan'    => $schedule->pertemuan,
-                'waktu_mulai'  => $req->waktu_mulai_usulan,
-                'waktu_selesai' => $req->waktu_selesai_usulan,
-                'status'       => 'Terjadwal',
+                'user_id'            => $schedule->user_id,
+                'prodi_id'           => $schedule->prodi_id,
+                'periode'            => $schedule->periode,
+                'mata_kuliah'        => $schedule->mata_kuliah,
+                'kelas'              => $schedule->kelas,
+                'pertemuan'          => $schedule->pertemuan,
+                'waktu_mulai'        => $req->waktu_mulai_usulan,
+                'waktu_selesai'      => $req->waktu_selesai_usulan,
+                'status'             => 'Terjadwal',
+                'dosen_pengganti_id' => $req->dosen_pengganti_id,
+                'room_id'            => $req->room_id,
             ]);
         }
 

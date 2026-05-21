@@ -52,7 +52,7 @@
             <!-- Right Column: Form & Calendar -->
             <div class="w-full md:w-2/3">
                 <div class="bg-white overflow-hidden shadow-lg sm:rounded-2xl p-8 border border-gray-100">
-                    <h3 class="text-2xl font-bold text-gray-800 mb-6">Pilih Jadwal Pengganti</h3>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6">Manajemen Pergantian Jadwal - Pilih Jadwal Pengganti</h3>
                     
                     @if ($errors->any())
                         <div class="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl relative" role="alert">
@@ -123,6 +123,18 @@
                         <input type="hidden" name="pengaju_type" value="dosen">
                         @endguest
                         
+                        <!-- Dosen Pengganti (Opsional) Dropdown -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Dosen Pengganti (Opsional)</label>
+                            <select name="dosen_pengganti_id" x-model="substituteId" @change="checkAvailability" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 text-lg py-3 px-4 transition-all">
+                                <option value="">-- Pilih Dosen Pengganti (Tetap Mengajar Sendiri) --</option>
+                                @foreach($dosens as $d)
+                                    <option value="{{ $d->id }}">{{ $d->name }}</option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Pilih dosen pengganti jika Anda ingin menugaskan dosen lain untuk menggantikan kelas Anda.</p>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-2">Tanggal Usulan *</label>
@@ -215,6 +227,7 @@
                 proposedRoom: '{{ request("room") ?? "" }}',
                 proposedRoomType: '',
                 pengajuType: 'dosen',
+                substituteId: '',
                 isBlocked: false,
                 statusColor: 'bg-gray-50 border-gray-200',
                 statusTextColor: 'text-gray-800',
@@ -244,7 +257,7 @@
                     this.statusTitle = 'Mengecek ketersediaan...';
                     
                     try {
-                        const response = await fetch(`/api/availability?date=${this.selectedDate}&start_time=${this.startTime}&end_time=${this.endTime}&dosen_id={{ $schedule->user_id }}&room=${encodeURIComponent(this.proposedRoom)}`);
+                        const response = await fetch(`/api/availability?date=${this.selectedDate}&start_time=${this.startTime}&end_time=${this.endTime}&dosen_id={{ $schedule->user_id }}&dosen_pengganti_id=${this.substituteId}&schedule_id={{ $schedule->id }}&room=${encodeURIComponent(this.proposedRoom)}`);
                         const data = await response.json();
                         
                         this.proposedRoomType = data.room_details ? data.room_details.type : '';
@@ -253,15 +266,15 @@
                             this.isBlocked = true;
                             this.statusColor = 'bg-red-50 border-red-200';
                             this.statusTextColor = 'text-red-800';
-                            this.statusTitle = '⚠️ Bentrok Jadwal Mengajar Dosen!';
-                            this.statusMessage = 'Dosen memiliki jadwal mengajar reguler lain pada jam terpilih.';
+                            this.statusTitle = '⚠️ Jadwal / Kuota Dosen Bentrok!';
+                            this.statusMessage = data.message.replace(/\n/g, '<br>') || 'Dosen memiliki jadwal mengajar reguler lain atau melebihi kuota harian pada jam terpilih.';
                             this.statusIcon = '❌';
                         } else if (data.dosen_request_conflict) {
                             this.isBlocked = true;
                             this.statusColor = 'bg-red-50 border-red-200';
                             this.statusTextColor = 'text-red-800';
-                            this.statusTitle = '⚠️ Bentrok Jadwal Pengganti Dosen!';
-                            this.statusMessage = 'Dosen memiliki permohonan pengganti lain pada jam terpilih.';
+                            this.statusTitle = '⚠️ Permohonan Bentrok!';
+                            this.statusMessage = data.message.replace(/\n/g, '<br>') || 'Dosen memiliki permohonan pengganti lain pada jam terpilih.';
                             this.statusIcon = '❌';
                         } else if (data.room_conflict) {
                             this.isBlocked = true;

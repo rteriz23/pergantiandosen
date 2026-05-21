@@ -11,6 +11,18 @@ const mix = require('laravel-mix');
  |
  */
 
+// Foolproof fix: Intercept webpack config and completely remove the ProgressPlugin
+// and WebpackBar plugin from Webpack's build pipeline to prevent schema errors.
+mix.webpackConfig(config => {
+    if (config.plugins) {
+        config.plugins = config.plugins.filter(plugin => {
+            if (!plugin || !plugin.constructor) return true;
+            const name = plugin.constructor.name;
+            return name !== 'ProgressPlugin' && name !== 'WebpackBar';
+        });
+    }
+});
+
 mix.options({
     progress: false
 });

@@ -21,6 +21,7 @@ mix.webpackConfig(config => {
             return name !== 'ProgressPlugin' && name !== 'WebpackBar';
         });
     }
+    return {};
 });
 
 mix.options({
